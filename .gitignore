@@ -1,0 +1,22 @@
+# Python environments and bytecode
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Frontend and build output
+node_modules/
+dist/
+build/
+
+# Local environment files
+.env
+*.env
+
+# Archives and logs
+*.rar
+*.zip
+*.7z
+*.log

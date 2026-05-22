@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+// In Vite development, VITE_API_URL=/api uses the proxy in vite.config.js.
+// The localhost fallback keeps direct backend access compatible.
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const api = axios.create({
