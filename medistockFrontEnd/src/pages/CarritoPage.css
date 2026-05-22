@@ -1,0 +1,19 @@
+.carrito-layout {
+  display: grid; grid-template-columns: 1fr 320px; gap: 24px;
+}
+@media (max-width: 800px) { .carrito-layout { grid-template-columns: 1fr; } }
+
+.item-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 12px; padding: 14px 16px;
+}
+.item-icon { font-size: 2rem; flex-shrink: 0; }
+.item-info { flex: 1; }
+.item-nombre { font-weight: 600; margin-bottom: 2px; }
+.item-precio { color: var(--color-primary); font-weight: 500; }
+.item-cantidad { display: flex; align-items: center; gap: 10px; font-weight: 600; min-width: 90px; justify-content: center; }
+.item-subtotal { font-weight: 700; min-width: 100px; text-align: right; }
+
+.resumen-linea { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; }
+.resumen-descuento { color: var(--color-success); }
+.resumen-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }

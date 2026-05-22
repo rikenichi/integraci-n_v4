@@ -1,0 +1,92 @@
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { useCarrito } from '../context/CarritoContext'
+import './Navbar.css'
+
+const ETIQUETAS_ROL = {
+  admin: 'Administrador',
+  cliente_b2b: 'Cliente B2B',
+  cliente_b2c: 'Paciente',
+  ejecutivo: 'Ejecutivo',
+  operador: 'Operador',
+  analista: 'Analista',
+}
+
+export default function Navbar() {
+  const { usuario, cerrarSesion } = useAuth()
+  const { totalItems } = useCarrito()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await cerrarSesion()
+    navigate('/login')
+  }
+
+  const handleSearch = (event) => {
+    event.preventDefault()
+    const query = new FormData(event.currentTarget).get('search')?.toString().trim()
+    navigate(query ? `/catalogo?search=${encodeURIComponent(query)}` : '/catalogo')
+  }
+
+  return (
+    <header className="site-header">
+      <div className="topbar">
+        <span>Despacho a todo Chile</span>
+        <span>Pago seguro con Webpay Plus</span>
+        <span>Stock actualizado en tiempo real</span>
+        <span>Atención para pacientes y clínicas</span>
+      </div>
+
+      <div className="main-header">
+        <Link to="/" className="header-brand">
+          <span className="brand-mark">M</span>
+          <span>
+            <strong>MEDISTOCK</strong>
+            <small>Farmacia e insumos médicos</small>
+          </span>
+        </Link>
+
+        <form className="header-search" onSubmit={handleSearch}>
+          <input name="search" type="search" placeholder="Buscar medicamentos, insumos o bienestar" />
+          <button type="submit">Buscar</button>
+        </form>
+
+        <div className="header-actions">
+          {usuario ? (
+            <>
+              <Link to="/perfil" className="quick-link">
+                <span>{usuario.first_name || usuario.username}</span>
+                <small>{ETIQUETAS_ROL[usuario.rol] || usuario.rol}</small>
+              </Link>
+              <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Salir</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="quick-link">
+                <span>Usuario</span>
+                <small>Iniciar sesión</small>
+              </Link>
+              <Link to="/registro" className="register-link">Crear cuenta</Link>
+            </>
+          )}
+
+          <Link to="/carrito" className="cart-link">
+            <span>Carrito</span>
+            {totalItems > 0 && <strong>{totalItems}</strong>}
+          </Link>
+        </div>
+      </div>
+
+      <nav className="category-nav">
+        <Link to="/">Inicio</Link>
+        <Link to="/catalogo">Ofertas</Link>
+        <Link to="/catalogo">Medicamentos</Link>
+        <Link to="/catalogo">Insumos médicos</Link>
+        <Link to="/catalogo">Bienestar</Link>
+        <Link to="/catalogo">Contacto</Link>
+        {usuario && <Link to="/panel">Mi Panel</Link>}
+        {usuario && <Link to="/perfil">Mi Perfil</Link>}
+      </nav>
+    </header>
+  )
+}

@@ -1,0 +1,75 @@
+.aprobaciones-page {
+  display: grid;
+  gap: 20px;
+}
+
+.aprobaciones-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.aprobaciones-kicker {
+  margin: 0 0 4px;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.aprobaciones-header .page-title {
+  margin-bottom: 6px;
+}
+
+.aprobaciones-toolbar {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.aprobaciones-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aprobaciones-section-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.aprobaciones-section-header span {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.aprobaciones-empty,
+.aprobaciones-acceso {
+  padding: 24px;
+}
+
+.aprobaciones-acceso h1 {
+  margin-top: 0;
+}
+
+.aprobaciones-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 230px;
+}
+
+@media (max-width: 760px) {
+  .aprobaciones-header {
+    flex-direction: column;
+  }
+
+  .aprobaciones-toolbar {
+    justify-content: flex-start;
+  }
+}
