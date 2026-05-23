@@ -97,7 +97,7 @@ export default function CatalogoPage() {
                 )}
               </div>
               <div className="producto-acciones">
-                <Link to={`/producto/${p.codigo}`} className="btn btn-secondary btn-sm">
+                <Link to={`/producto/${p.id}`} className="btn btn-secondary btn-sm">
                   Ver detalle
                 </Link>
                 <button

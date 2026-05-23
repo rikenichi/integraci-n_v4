@@ -6,6 +6,7 @@ import './PedidoDetallePage.css'
 
 const ESTADOS_PAGABLES = ['pendiente', 'aprobado']
 const ESTADOS_CON_TRACKING = ['aprobado', 'en_preparacion', 'despachado', 'entregado']
+const ROLES_CLIENTE = ['cliente', 'cliente_b2c', 'cliente_b2b']
 
 function formatPrecio(valor) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(valor || 0))
@@ -99,9 +100,9 @@ export default function PedidoDetallePage() {
   const pago = pedido?.pago_info
   const despacho = pedido?.despacho_info
   const dte = pedido?.dte_info
+  const esCliente = ROLES_CLIENTE.includes(usuario?.rol)
   const puedePagar = ESTADOS_PAGABLES.includes(pedido?.estado) &&
-    usuario?.rol !== 'operador' &&
-    pedido?.usuario === usuario?.id
+    esCliente
   const puedeVerTracking = Boolean(despacho?.id) || ESTADOS_CON_TRACKING.includes(pedido?.estado)
   const timeline = useMemo(() => pedido ? estadoPasoPedido(pedido, pago, despacho, dte) : [], [pedido, pago, despacho, dte])
 

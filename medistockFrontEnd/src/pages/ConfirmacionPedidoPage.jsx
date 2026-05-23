@@ -174,6 +174,7 @@ function construirProductosCotizacion(items) {
     ancho_mm: numeroSeguro(producto?.ancho_mm, 100),
     alto_mm: numeroSeguro(producto?.alto_mm, 100),
     cantidad: numeroSeguro(cantidad, 1),
+    valor_unitario: Number(producto?.valor_unitario ?? producto?.precio ?? producto?.precio_b2c ?? 0),
   }))
 }
 

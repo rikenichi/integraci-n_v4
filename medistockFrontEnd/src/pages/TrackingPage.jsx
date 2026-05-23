@@ -20,6 +20,45 @@ const ICONOS_ESTADO = {
   fallido: 'ERR',
 }
 
+function normalizarEstadoTracking(valor) {
+  const estado = String(valor || '').toLowerCase()
+  if (estado.includes('delivered') || estado.includes('entregado')) return 'entregado'
+  if (estado.includes('route') || estado.includes('transit') || estado.includes('ruta')) return 'en_ruta'
+  if (estado.includes('warehouse') || estado.includes('bodega') || estado.includes('pendiente')) return 'en_bodega'
+  if (estado.includes('fail') || estado.includes('rechaz')) return 'fallido'
+  return estado || 'generado'
+}
+
+function normalizarEventoTracking(evento, index) {
+  return {
+    id: evento.id || evento.eventId || `${evento.timestamp || evento.date || 'evento'}-${index}`,
+    estado: normalizarEstadoTracking(evento.estado || evento.status || evento.eventCode),
+    descripcion: evento.descripcion || evento.description || evento.statusDescription || 'Evento de seguimiento',
+    ubicacion: evento.ubicacion || evento.location || evento.officeName || '',
+    timestamp: evento.timestamp || evento.date || evento.eventDate || new Date().toISOString(),
+  }
+}
+
+function normalizarDespachoTracking(payload, pedidoId) {
+  const base = payload?.despacho || payload?.data || payload || {}
+  const eventos = base.eventos || base.events || base.trackingEvents || []
+
+  return {
+    pedido: base.pedido || base.pedido_id || pedidoId,
+    numero_tracking:
+      base.numero_tracking ||
+      base.numero_seguimiento ||
+      base.transportOrderNumber ||
+      base.transport_order_number ||
+      `PED-${pedidoId}`,
+    courier: base.courier || base.courier_nombre || 'Chilexpress',
+    estado: normalizarEstadoTracking(base.estado || base.estado_envio || base.status),
+    fecha_estimada_entrega: base.fecha_estimada_entrega || base.fecha_entrega_estimada || null,
+    direccion_destino: base.direccion_destino || base.destinationAddress || 'Direccion registrada en el pedido',
+    eventos: Array.isArray(eventos) ? eventos.map(normalizarEventoTracking) : [],
+  }
+}
+
 export default function TrackingPage() {
   const { despachoId } = useParams()
   const { usuario } = useAuth()
@@ -45,8 +84,9 @@ export default function TrackingPage() {
     setLoading(true)
     try {
       const { data } = await getTracking(despachoId)
-      setDespacho(data.despacho)
-      await cargarPedidoRelacionado(data.despacho?.pedido || despachoId)
+      const despachoNormalizado = normalizarDespachoTracking(data, despachoId)
+      setDespacho(despachoNormalizado)
+      await cargarPedidoRelacionado(despachoNormalizado.pedido || despachoId)
       setError('')
     } catch (err) {
       if (err.response?.status === 404) {

@@ -49,6 +49,50 @@ function obtenerListaRespuesta(data) {
   return data?.results || data || []
 }
 
+function formatearEstado(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, letra => letra.toUpperCase())
+}
+
+function normalizarDetallePedido(detalle = {}) {
+  return {
+    ...detalle,
+    producto_codigo: detalle.producto_codigo || detalle.producto_sku || detalle.producto_info?.codigo || detalle.producto_id,
+    producto_nombre: detalle.producto_nombre || detalle.producto_info?.nombre || `Producto ${detalle.producto_id || ''}`,
+    precio_unitario: detalle.precio_unitario ?? detalle.precio_unitario_historico ?? 0,
+    subtotal: detalle.subtotal ?? 0,
+  }
+}
+
+function normalizarPedido(pedido = {}) {
+  const estado = String(pedido.estado || pedido.estado_pedido || '').toLowerCase()
+  const detalles = Array.isArray(pedido.detalles)
+    ? pedido.detalles.map(normalizarDetallePedido)
+    : []
+
+  return {
+    ...pedido,
+    estado,
+    estado_display: pedido.estado_display || formatearEstado(pedido.estado_pedido || pedido.estado),
+    creado_en: pedido.creado_en || pedido.fecha_creacion,
+    actualizado_en: pedido.actualizado_en || pedido.fecha_actualizacion,
+    descuento: pedido.descuento ?? pedido.descuento_total ?? 0,
+    costo_envio: pedido.costo_envio ?? pedido.despacho_info?.costo_despacho ?? 0,
+    detalles,
+  }
+}
+
+function normalizarRespuestaPedido(response) {
+  return {
+    ...response,
+    data: Array.isArray(response.data)
+      ? response.data.map(normalizarPedido)
+      : normalizarPedido(response.data),
+  }
+}
+
 // --- Auth ---
 export const login = (username, password) =>
   api.post('/accounts/login/', { username, password })
@@ -130,7 +174,16 @@ export async function obtenerProductosCompatibles(params = {}) {
 export async function obtenerProductoCompatible(codigo) {
   try {
     const response = await getProducto(codigo)
-    return normalizarProducto(response.data)
+    const productoDetalle = normalizarProducto(response.data)
+    if (productoDetalle.stock_por_sucursal?.length) return productoDetalle
+
+    const productos = await obtenerProductosCompatibles()
+    const productoCatalogo = productos.find((item) =>
+      String(item.id) === String(productoDetalle.id) ||
+      String(item.codigo) === String(codigo) ||
+      String(item.sku) === String(codigo)
+    )
+    return productoCatalogo ? { ...productoDetalle, ...productoCatalogo } : productoDetalle
   } catch {
     const productos = await obtenerProductosCompatibles()
     const producto = productos.find((item) =>
@@ -253,9 +306,12 @@ export const getCategorias = () => api.get('/inventory/public/categorias/')
 
 // --- Pedidos ---
 export const crearPedido = (datos) => api.post('/orders/pedidos/', datos)
-export const getMisPedidos = () => api.get('/orders/pedidos/mis-pedidos/')
-export const getPedidosTodos = () => api.get('/orders/pedidos/todos/')
-export const getPedido = (id) => api.get(`/orders/pedidos/${id}/`)
+export const getMisPedidos = async () =>
+  normalizarRespuestaPedido(await api.get('/orders/pedidos/mis-pedidos/'))
+export const getPedidosTodos = async () =>
+  normalizarRespuestaPedido(await api.get('/orders/pedidos/todos/'))
+export const getPedido = async (id) =>
+  normalizarRespuestaPedido(await api.get(`/orders/pedidos/${id}/`))
 export const obtenerPedidoDetalle = getPedido
 export const aprobarPedido = (id) => api.post(`/orders/pedidos/${id}/aprobar/`)
 // Demo controlado: no existe endpoint separado para revisiones B2B.
