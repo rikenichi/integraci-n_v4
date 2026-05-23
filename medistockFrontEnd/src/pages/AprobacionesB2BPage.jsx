@@ -109,7 +109,7 @@ export default function AprobacionesB2BPage() {
           <p className="aprobaciones-kicker">Revisión comercial</p>
           <h1 className="page-title">Aprobaciones B2B</h1>
           <p className="text-muted">
-            Registro administrativo de revisiones comerciales para pedidos institucionales.
+            Vista demo para defender el flujo de revisión comercial de pedidos institucionales.
           </p>
         </div>
         <div className="aprobaciones-toolbar">

@@ -75,7 +75,7 @@ export default function ComprasProveedorPage() {
           <p className="compras-kicker">Gestión interna</p>
           <h1 className="page-title">Compras y proveedores</h1>
           <p className="text-muted">
-            Consulta de proveedores y órdenes de compra registradas en el backend.
+            Vista demo con proveedores y órdenes de compra de ejemplo hasta exponer procurement en API.
           </p>
         </div>
         <div className="compras-toolbar">

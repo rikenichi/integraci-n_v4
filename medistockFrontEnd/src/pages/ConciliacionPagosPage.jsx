@@ -107,7 +107,7 @@ export default function ConciliacionPagosPage() {
           <p className="conciliacion-kicker">Finanzas internas</p>
           <h1 className="page-title">Conciliación de pagos</h1>
           <p className="text-muted">
-            Revisión administrativa del estado de conciliación, sin alterar el estado real del pago.
+            Vista demo de conciliación; permite simular estados sin alterar pagos reales del backend.
           </p>
         </div>
         <div className="conciliacion-toolbar">

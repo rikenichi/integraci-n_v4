@@ -17,6 +17,7 @@ export default function ProductoDetallePage() {
   const [loading, setLoading] = useState(true)
   const [loadingStock, setLoadingStock] = useState(false)
   const [error, setError] = useState('')
+  const [errorStock, setErrorStock] = useState('')
   const [agregado, setAgregado] = useState(false)
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
@@ -24,6 +25,8 @@ export default function ProductoDetallePage() {
 
   useEffect(() => {
     setLoading(true)
+    setError('')
+    setErrorStock('')
     obtenerProductoCompatible(codigo)
       .then(data => setProducto(data))
       .catch(() => setError('Producto no encontrado.'))
@@ -32,9 +35,10 @@ export default function ProductoDetallePage() {
 
   const verStock = () => {
     setLoadingStock(true)
+    setErrorStock('')
     obtenerStockProductoCompatible(codigo)
       .then(data => setStock(data))
-      .catch(() => setError('No se pudo cargar el stock.'))
+      .catch(() => setErrorStock('No se pudo cargar el stock por sucursal. Puedes agregar el producto y validar disponibilidad en el checkout.'))
       .finally(() => setLoadingStock(false))
   }
 
@@ -103,6 +107,7 @@ export default function ProductoDetallePage() {
                 {loadingStock ? 'Consultando...' : '📦 Ver stock por sucursal'}
               </button>
             </div>
+            {errorStock && <div className="alert alert-warning mt-1">{errorStock}</div>}
           </div>
 
           {stock && (

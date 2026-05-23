@@ -30,6 +30,7 @@ export default function CatalogoPage() {
 
   useEffect(() => {
     setLoading(true)
+    setError('')
     const params = {}
     if (filtros.search) params.search = filtros.search
     if (filtros.categoria) params.categoria = filtros.categoria

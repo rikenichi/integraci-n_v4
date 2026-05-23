@@ -75,6 +75,146 @@ function respuestaDemo(data) {
   return Promise.resolve({ data, demo: true })
 }
 
+let demoAprobacionesB2B = [
+  {
+    id: 1,
+    pedido: 1024,
+    cliente_institucion: 'Clinica Baviera',
+    cliente_username: 'clinica_baviera',
+    pedido_tipo_cliente: 'institucional',
+    pedido_total: 189900,
+    ejecutivo_username: 'ejecutivo_ventas',
+    fecha_revision: '2026-05-20T10:30:00Z',
+    estado_aprobacion: 'pendiente',
+    comentario: 'Demo: bandeja pendiente de endpoint dedicado.',
+  },
+]
+
+let demoConciliacionesPago = [
+  {
+    id: 1,
+    pago: 501,
+    pago_monto: 84990,
+    pago_estado: 'CONFIRMADO',
+    pago_metodo: 'WEBPAY',
+    analista_username: 'analista_finanzas',
+    fecha_conciliacion: null,
+    estado_conciliacion: 'pendiente',
+    observacion: 'Demo: conciliacion financiera sin persistencia backend.',
+    creado_en: '2026-05-20T12:00:00Z',
+    actualizado_en: '2026-05-20T12:00:00Z',
+  },
+]
+
+let demoGuiasDespacho = [
+  {
+    id: 1,
+    numero_guia: 'GD-DEMO-0001',
+    pedido: 1024,
+    pedido_numero: 1024,
+    despacho_tracking: 'DEMO-1024',
+    fecha_emision: '2026-05-20T13:00:00Z',
+    motivo_traslado: 'Venta online',
+    transportista: 'Chilexpress demo',
+    patente_vehiculo: 'MEDI-01',
+    direccion_origen: 'Sucursal Central',
+    direccion_destino: 'Direccion de entrega demo',
+    estado: 'emitida',
+    observacion: 'Demo documental; no genera guia backend.',
+  },
+]
+
+const DEMO_PROVEEDORES = [
+  {
+    id: 1,
+    nombre_empresa: 'Proveedor Clinico Demo SpA',
+    rut: '76.000.000-0',
+    contacto: 'Mesa de abastecimiento',
+    email: 'compras.demo@medistock.cl',
+    telefono: '+56 2 2000 0000',
+    activo: true,
+  },
+]
+
+const DEMO_ORDENES_COMPRA = [
+  {
+    id: 3001,
+    proveedor_nombre: 'Proveedor Clinico Demo SpA',
+    sucursal_nombre: 'Sucursal Central',
+    usuario_username: 'operador_logistica',
+    fecha_compra: '2026-05-19T09:00:00Z',
+    estado: 'demo',
+    estado_display: 'Demo',
+    observacion: 'Orden de compra ilustrativa hasta exponer procurement en API.',
+  },
+]
+
+const DEMO_INTEGRACIONES = [
+  {
+    id: 1,
+    nombre: 'Chilexpress',
+    tipo: 'courier',
+    descripcion: 'Integracion real usada por cotizacion y tracking cuando hay datos.',
+    endpoint_base: '/api/logistics/',
+    activo: true,
+    creado_en: '2026-05-18T08:00:00Z',
+  },
+  {
+    id: 2,
+    nombre: 'Transbank Webpay Plus',
+    tipo: 'pago',
+    descripcion: 'Integracion real usada para iniciar y confirmar pagos Webpay.',
+    endpoint_base: '/api/payments/webpay/',
+    activo: true,
+    creado_en: '2026-05-18T08:05:00Z',
+  },
+]
+
+const DEMO_REGISTROS_INTEGRACION = [
+  {
+    id: 1,
+    integracion_nombre: 'Transbank Webpay Plus',
+    usuario_username: 'paciente_gomez',
+    entidad_relacionada_tipo: 'Pedido',
+    entidad_relacionada_id: 1024,
+    metodo: 'POST',
+    endpoint: '/api/payments/webpay/iniciar/',
+    estado: 'exitoso',
+    codigo_respuesta: 201,
+    mensaje: 'Demo de registro tecnico; no persistido en backend.',
+    creado_en: '2026-05-20T14:00:00Z',
+  },
+]
+
+const DEMO_AUDITORIA = [
+  {
+    id: 1,
+    usuario_username: 'admin',
+    modulo: 'integraciones',
+    accion: 'revision_demo',
+    descripcion: 'Evento demo para explicar auditoria futura.',
+    entidad_tipo: 'IntegracionExterna',
+    entidad_id: 1,
+    nivel: 'info',
+    creado_en: '2026-05-20T14:05:00Z',
+  },
+]
+
+const DEMO_CONVENIOS = [
+  {
+    id: 1,
+    institucion_nombre: 'Clinica Baviera',
+    institucion_rut: '76.123.456-7',
+    nombre_convenio: 'Convenio B2B demo',
+    fecha_inicio: '2026-01-01',
+    fecha_fin: '2026-12-31',
+    porcentaje_descuento: 10,
+    condiciones_pago: 'Webpay o transferencia institucional',
+    estado: 'activo',
+    observacion: 'Demo hasta exponer convenio institucional por API.',
+  },
+]
+
 function obtenerListaRespuesta(data) {
   return data?.results || data || []
 }
@@ -138,7 +278,7 @@ export const registrarUsuario = (datos) =>
   api.post('/accounts/registro/cliente/', datos)
 
 // Demo controlado: accounts define convenios, pero aun no expone URL publica.
-export const obtenerConveniosInstitucionales = () => respuestaDemo([])
+export const obtenerConveniosInstitucionales = () => respuestaDemo(DEMO_CONVENIOS)
 
 // --- Productos ---
 export const getProductos = (params = {}) =>
@@ -315,8 +455,8 @@ export async function obtenerResumenInventario() {
 
 // --- Compras internas ---
 // Demo controlado: procurement tiene modelos, pero aun no expone URLs en backend.
-export const obtenerProveedores = () => respuestaDemo([])
-export const obtenerOrdenesCompra = () => respuestaDemo([])
+export const obtenerProveedores = () => respuestaDemo(DEMO_PROVEEDORES)
+export const obtenerOrdenesCompra = () => respuestaDemo(DEMO_ORDENES_COMPRA)
 
 // --- Traslados de inventario ---
 export const obtenerTrasladosInventario = () => api.get('/inventory/traslados/')
@@ -327,9 +467,9 @@ export const cancelarTrasladoInventario = (id) => respuestaDemo({ id, estado: 'C
 
 // --- Integraciones y auditoria ---
 // Demo controlado: integrations tiene modelos, pero aun no expone URLs en backend.
-export const obtenerIntegracionesExternas = () => respuestaDemo([])
-export const obtenerRegistrosIntegracion = () => respuestaDemo([])
-export const obtenerAuditoriaEventos = () => respuestaDemo([])
+export const obtenerIntegracionesExternas = () => respuestaDemo(DEMO_INTEGRACIONES)
+export const obtenerRegistrosIntegracion = () => respuestaDemo(DEMO_REGISTROS_INTEGRACION)
+export const obtenerAuditoriaEventos = () => respuestaDemo(DEMO_AUDITORIA)
 
 // --- Categorias ---
 export const getCategorias = () => api.get('/inventory/public/categorias/')
@@ -345,10 +485,25 @@ export const getPedido = async (id) =>
 export const obtenerPedidoDetalle = getPedido
 export const aprobarPedido = (id) => api.post(`/orders/pedidos/${id}/aprobar/`)
 // Demo controlado: no existe endpoint separado para revisiones B2B.
-export const obtenerAprobacionesB2B = () => respuestaDemo([])
-export const aprobarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'aprobado' })
-export const rechazarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'rechazado' })
-export const observarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'observado' })
+export const obtenerAprobacionesB2B = () => respuestaDemo(demoAprobacionesB2B)
+export const aprobarRevisionB2B = (id) => {
+  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'aprobado' } : item
+  )
+  return respuestaDemo({ id, estado_aprobacion: 'aprobado' })
+}
+export const rechazarRevisionB2B = (id) => {
+  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'rechazado' } : item
+  )
+  return respuestaDemo({ id, estado_aprobacion: 'rechazado' })
+}
+export const observarRevisionB2B = (id) => {
+  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'observado' } : item
+  )
+  return respuestaDemo({ id, estado_aprobacion: 'observado' })
+}
 
 // --- Pagos ---
 // Demo controlado: el backend real disponible para pagos es Webpay en /payments/.
@@ -372,9 +527,15 @@ export const simularPago = (datos) => {
 }
 export const getPagos = () => api.get('/payments/mis-pagos/')
 // Demo controlado: conciliacion financiera aun no tiene URL backend.
-export const obtenerConciliacionesPago = () => respuestaDemo([])
-export const actualizarConciliacionPago = (id, datos) =>
-  respuestaDemo({ id, ...datos })
+export const obtenerConciliacionesPago = () => respuestaDemo(demoConciliacionesPago)
+export const actualizarConciliacionPago = (id, datos) => {
+  demoConciliacionesPago = demoConciliacionesPago.map(item =>
+    Number(item.id) === Number(id)
+      ? { ...item, ...datos, actualizado_en: new Date().toISOString() }
+      : item
+  )
+  return respuestaDemo({ id, ...datos })
+}
 
 // --- DTE simulado ---
 // Demo controlado: billing tiene modelos DTE, pero aun no expone URLs.
@@ -425,10 +586,25 @@ export const getDespacho = (id) => respuestaDemo({ id })
 export const getTracking = (pedidoId) => api.get(`/logistics/envios/${pedidoId}/tracking/`)
 export const getDespachos = () => respuestaDemo([])
 // Demo controlado: billing define GuiaDespacho, pero aun no expone URLs.
-export const obtenerGuiasDespacho = () => respuestaDemo([])
-export const marcarGuiaEnTransito = (id) => respuestaDemo({ id, estado: 'en_transito' })
-export const marcarGuiaEntregada = (id) => respuestaDemo({ id, estado: 'entregada' })
-export const anularGuiaDespacho = (id) => respuestaDemo({ id, estado: 'anulada' })
+export const obtenerGuiasDespacho = () => respuestaDemo(demoGuiasDespacho)
+export const marcarGuiaEnTransito = (id) => {
+  demoGuiasDespacho = demoGuiasDespacho.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado: 'en_transito' } : item
+  )
+  return respuestaDemo({ id, estado: 'en_transito' })
+}
+export const marcarGuiaEntregada = (id) => {
+  demoGuiasDespacho = demoGuiasDespacho.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado: 'entregada' } : item
+  )
+  return respuestaDemo({ id, estado: 'entregada' })
+}
+export const anularGuiaDespacho = (id) => {
+  demoGuiasDespacho = demoGuiasDespacho.map(item =>
+    Number(item.id) === Number(id) ? { ...item, estado: 'anulada' } : item
+  )
+  return respuestaDemo({ id, estado: 'anulada' })
+}
 
 // --- Courier experimental ---
 export const getRegionesCourier = () => api.get('/locations/regions/')

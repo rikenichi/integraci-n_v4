@@ -104,7 +104,7 @@ export default function IntegracionesPage() {
           <p className="integraciones-kicker">Supervisión interna</p>
           <h1 className="page-title">Integraciones y auditoría</h1>
           <p className="text-muted">
-            Consulta de servicios externos, registros técnicos resumidos y eventos auditables.
+            Vista demo de servicios externos, registros técnicos resumidos y auditoría futura.
           </p>
         </div>
         <div className="integraciones-toolbar">
