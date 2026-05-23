@@ -3,14 +3,19 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './LoginPage.css'
 
-const USUARIOS_DEMO = [
-  { label: 'Admin', username: 'admin', password: 'Elimine4321#' },
-  { label: 'Clínica B2B', username: 'clinica_baviera', password: 'Clinica123!' },
-  { label: 'Paciente B2C', username: 'paciente_gomez', password: 'Paciente123!' },
-  { label: 'Ejecutivo', username: 'ejecutivo_ventas', password: 'Ejecutivo123!' },
-  { label: 'Operador', username: 'operador_logistica', password: 'Operador123!' },
-  { label: 'Analista', username: 'analista_finanzas', password: 'Analista123!' },
-]
+const ES_DESARROLLO = import.meta.env.DEV
+
+const USUARIOS_DEMO = ES_DESARROLLO
+  ? [
+      // DEMO LOCAL: accesos rapidos solo para desarrollo; Vite los elimina del build de produccion.
+      { label: 'Admin', username: import.meta.env.VITE_DEMO_ADMIN_USER || 'admin', password: import.meta.env.VITE_DEMO_ADMIN_PASSWORD || '' },
+      { label: 'Clinica B2B', username: import.meta.env.VITE_DEMO_B2B_USER || 'clinica_baviera', password: import.meta.env.VITE_DEMO_B2B_PASSWORD || '' },
+      { label: 'Paciente B2C', username: import.meta.env.VITE_DEMO_B2C_USER || 'paciente_gomez', password: import.meta.env.VITE_DEMO_B2C_PASSWORD || '' },
+      { label: 'Ejecutivo', username: import.meta.env.VITE_DEMO_EJECUTIVO_USER || 'ejecutivo_ventas', password: import.meta.env.VITE_DEMO_EJECUTIVO_PASSWORD || '' },
+      { label: 'Operador', username: import.meta.env.VITE_DEMO_OPERADOR_USER || 'operador_logistica', password: import.meta.env.VITE_DEMO_OPERADOR_PASSWORD || '' },
+      { label: 'Analista', username: import.meta.env.VITE_DEMO_ANALISTA_USER || 'analista_finanzas', password: import.meta.env.VITE_DEMO_ANALISTA_PASSWORD || '' },
+    ]
+  : []
 
 const ROLES_PANEL = ['admin', 'ejecutivo', 'operador', 'analista', 'trabajador']
 
@@ -31,7 +36,7 @@ export default function LoginPage() {
       const usuario = await iniciarSesion(username, password)
       navigate(ROLES_PANEL.includes(usuario.rol) ? '/panel' : '/catalogo')
     } catch (err) {
-      setError('Credenciales incorrectas. Verifica tu usuario y contraseña.')
+      setError('Credenciales incorrectas. Verifica tu usuario y contrasena.')
     } finally {
       setLoading(false)
     }
@@ -48,7 +53,7 @@ export default function LoginPage() {
         <div className="login-header">
           <span className="login-logo">+</span>
           <h1>MEDISTOCK</h1>
-          <p className="text-muted">Distribuidora de Insumos Clínicos</p>
+          <p className="text-muted">Distribuidora de Insumos Clinicos</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -63,18 +68,18 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label>Contraseña</label>
+            <label>Contrasena</label>
             <div className="password-field">
               <input
                 type={mostrarPassword ? 'text' : 'password'} value={password} required
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="********"
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setMostrarPassword(prev => !prev)}
-                aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={mostrarPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 aria-pressed={mostrarPassword}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -86,27 +91,29 @@ export default function LoginPage() {
             </div>
           </div>
           <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
-            {loading ? 'Ingresando...' : 'Iniciar sesión'}
+            {loading ? 'Ingresando...' : 'Iniciar sesion'}
           </button>
         </form>
 
-        <div className="demo-section">
-          <p className="demo-title">Usuarios de prueba (demo)</p>
-          <div className="demo-btns">
-            {USUARIOS_DEMO.map(u => (
-              <button key={u.username} className="btn btn-secondary btn-sm"
-                onClick={() => loginRapido(u)}>
-                {u.label}
-              </button>
-            ))}
+        {ES_DESARROLLO && (
+          <div className="demo-section">
+            <p className="demo-title">Usuarios de prueba (demo local)</p>
+            <div className="demo-btns">
+              {USUARIOS_DEMO.map(u => (
+                <button key={u.username} className="btn btn-secondary btn-sm"
+                  onClick={() => loginRapido(u)}>
+                  {u.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <p className="mt-2 text-center text-muted" style={{fontSize:'0.8rem'}}>
-          <Link to="/catalogo">Ver catálogo sin iniciar sesión →</Link>
+        <p className="mt-2 text-center text-muted" style={{ fontSize: '0.8rem' }}>
+          <Link to="/catalogo">Ver catalogo sin iniciar sesion</Link>
         </p>
-        <p className="mt-1 text-center text-muted" style={{fontSize:'0.8rem'}}>
-          ¿No tienes cuenta? <Link to="/registro">Crear cuenta MEDISTOCK</Link>
+        <p className="mt-1 text-center text-muted" style={{ fontSize: '0.8rem' }}>
+          No tienes cuenta? <Link to="/registro">Crear cuenta MEDISTOCK</Link>
         </p>
       </div>
     </div>
