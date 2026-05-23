@@ -5,11 +5,13 @@ import './Navbar.css'
 
 const ETIQUETAS_ROL = {
   admin: 'Administrador',
+  cliente: 'Cliente',
   cliente_b2b: 'Cliente B2B',
   cliente_b2c: 'Paciente',
   ejecutivo: 'Ejecutivo',
   operador: 'Operador',
   analista: 'Analista',
+  trabajador: 'Trabajador',
 }
 
 export default function Navbar() {
@@ -27,6 +29,9 @@ export default function Navbar() {
     const query = new FormData(event.currentTarget).get('search')?.toString().trim()
     navigate(query ? `/catalogo?search=${encodeURIComponent(query)}` : '/catalogo')
   }
+
+  const nombreUsuario = usuario?.first_name || usuario?.username || usuario?.datos?.first_name ||
+    usuario?.datos?.usuario?.username || 'Usuario'
 
   return (
     <header className="site-header">
@@ -55,7 +60,7 @@ export default function Navbar() {
           {usuario ? (
             <>
               <Link to="/perfil" className="quick-link">
-                <span>{usuario.first_name || usuario.username}</span>
+                <span>{nombreUsuario}</span>
                 <small>{ETIQUETAS_ROL[usuario.rol] || usuario.rol}</small>
               </Link>
               <button className="btn btn-secondary btn-sm" onClick={handleLogout}>Salir</button>

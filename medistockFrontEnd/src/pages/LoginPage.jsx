@@ -12,6 +12,8 @@ const USUARIOS_DEMO = [
   { label: 'Analista', username: 'analista_finanzas', password: 'Analista123!' },
 ]
 
+const ROLES_PANEL = ['admin', 'ejecutivo', 'operador', 'analista', 'trabajador']
+
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -27,7 +29,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const usuario = await iniciarSesion(username, password)
-      navigate(usuario.rol === 'admin' ? '/panel' : '/catalogo')
+      navigate(ROLES_PANEL.includes(usuario.rol) ? '/panel' : '/catalogo')
     } catch (err) {
       setError('Credenciales incorrectas. Verifica tu usuario y contraseña.')
     } finally {
