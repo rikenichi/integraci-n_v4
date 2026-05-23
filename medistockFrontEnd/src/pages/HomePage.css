@@ -18,14 +18,42 @@
   padding: 42px;
   border-radius: 8px;
   background:
-    linear-gradient(90deg, rgba(0, 78, 122, 0.94), rgba(0, 119, 182, 0.72)),
-    url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1400&q=80');
-  background-size: cover;
-  background-position: center;
+    radial-gradient(circle at 86% 20%, rgba(72,202,228,0.36), transparent 28%),
+    radial-gradient(circle at 18% 84%, rgba(45,106,79,0.28), transparent 26%),
+    linear-gradient(135deg, #083344 0%, #006b9f 50%, #0f766e 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-hero-content::before,
+.home-hero-content::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50%;
+}
+
+.home-hero-content::before {
+  width: 220px;
+  height: 220px;
+  right: -60px;
+  top: -80px;
+}
+
+.home-hero-content::after {
+  width: 140px;
+  height: 140px;
+  right: 70px;
+  bottom: -58px;
+}
+
+.home-hero-content > * {
+  position: relative;
+  z-index: 1;
 }
 
 .home-eyebrow {
@@ -106,6 +134,13 @@
   display: flex;
   gap: 12px;
   box-shadow: var(--shadow);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.home-benefit:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,119,182,0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .benefit-icon {
@@ -165,11 +200,20 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  animation: cardEnter 0.28s ease both;
+}
+
+.home-product-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0,119,182,0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .home-product-media {
   height: 142px;
-  background: #eef7fb;
+  background:
+    linear-gradient(135deg, #eef7fb, #f0fdf4);
   display: grid;
   place-items: center;
   color: var(--color-primary);

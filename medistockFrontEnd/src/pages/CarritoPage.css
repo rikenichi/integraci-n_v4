@@ -6,6 +6,13 @@
 .item-row {
   display: flex; align-items: center; gap: 16px;
   margin-bottom: 12px; padding: 14px 16px;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  animation: cardEnter 0.25s ease both;
+}
+.item-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,119,182,0.22);
+  box-shadow: var(--shadow-md);
 }
 .item-icon { font-size: 2rem; flex-shrink: 0; }
 .item-info { flex: 1; }
@@ -17,3 +24,20 @@
 .resumen-linea { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; }
 .resumen-descuento { color: var(--color-success); }
 .resumen-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }
+
+.carrito-resumen {
+  position: sticky;
+  top: 18px;
+  border-color: rgba(0,119,182,0.14);
+  box-shadow: var(--shadow-md);
+}
+
+.carrito-resumen .btn-lg {
+  margin-top: 10px;
+}
+
+@media (max-width: 800px) {
+  .carrito-resumen {
+    position: static;
+  }
+}

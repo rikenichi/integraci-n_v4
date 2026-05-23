@@ -107,7 +107,7 @@ export default function AprobacionesB2BPage() {
       <div className="aprobaciones-header">
         <div>
           <p className="aprobaciones-kicker">Revisión comercial</p>
-          <h1 className="page-title">Aprobaciones B2B</h1>
+          <h1 className="page-title">Aprobaciones B2B <span className="demo-chip">Demo</span></h1>
           <p className="text-muted">
             Vista demo para defender el flujo de revisión comercial de pedidos institucionales.
           </p>

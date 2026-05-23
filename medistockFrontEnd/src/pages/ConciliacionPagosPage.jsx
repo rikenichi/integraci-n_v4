@@ -105,7 +105,7 @@ export default function ConciliacionPagosPage() {
       <div className="conciliacion-header">
         <div>
           <p className="conciliacion-kicker">Finanzas internas</p>
-          <h1 className="page-title">Conciliación de pagos</h1>
+          <h1 className="page-title">Conciliación de pagos <span className="demo-chip">No persistente</span></h1>
           <p className="text-muted">
             Vista demo de conciliación; permite simular estados sin alterar pagos reales del backend.
           </p>

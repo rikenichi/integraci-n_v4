@@ -100,7 +100,7 @@ export default function GuiasDespachoPage() {
       <div className="guias-header">
         <div>
           <p className="guias-kicker">Despacho administrativo</p>
-          <h1 className="page-title">Guías de despacho</h1>
+          <h1 className="page-title">Guías de despacho <span className="demo-chip">Demo</span></h1>
           <p className="text-muted">
             Documentos simulados para trazabilidad documental, separados del tracking operativo real.
           </p>

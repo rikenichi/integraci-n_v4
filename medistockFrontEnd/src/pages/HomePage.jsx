@@ -93,7 +93,7 @@ export default function HomePage() {
               const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
               return (
                 <article className="home-product-card" key={producto.id}>
-                  <Link to={`/producto/${producto.codigo}`} className="home-product-media">
+                  <Link to={`/producto/${producto.id}`} className="home-product-media">
                     {producto.imagen_url
                       ? <img src={producto.imagen_url} alt={producto.nombre} />
                       : <span>+</span>
@@ -109,7 +109,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="home-product-actions">
-                    <Link to={`/producto/${producto.codigo}`} className="btn btn-secondary btn-sm">Ver producto</Link>
+                    <Link to={`/producto/${producto.id}`} className="btn btn-secondary btn-sm">Ver producto</Link>
                     <button className="btn btn-primary btn-sm" onClick={() => agregarItem(producto)}>
                       Agregar
                     </button>

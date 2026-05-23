@@ -73,7 +73,7 @@ export default function ComprasProveedorPage() {
       <div className="compras-header">
         <div>
           <p className="compras-kicker">Gestión interna</p>
-          <h1 className="page-title">Compras y proveedores</h1>
+          <h1 className="page-title">Compras y proveedores <span className="demo-chip">Demo</span></h1>
           <p className="text-muted">
             Vista demo con proveedores y órdenes de compra de ejemplo hasta exponer procurement en API.
           </p>
