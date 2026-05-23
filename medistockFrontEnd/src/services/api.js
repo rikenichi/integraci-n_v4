@@ -9,9 +9,31 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+const RUTAS_SIN_REFRESH = [
+  '/accounts/login/',
+  '/token/',
+  '/token/refresh/',
+  '/accounts/login/refresh/',
+]
+
+function obtenerRutaApi(url = '') {
+  try {
+    return new URL(String(url), 'http://medistock.local').pathname.replace(/^\/api(?=\/)/, '')
+  } catch {
+    return String(url).split('?')[0].replace(/^\/api(?=\/)/, '')
+  }
+}
+
+function esRutaSinRefresh(url) {
+  const ruta = obtenerRutaApi(url)
+  return RUTAS_SIN_REFRESH.some((rutaExcluida) =>
+    ruta === rutaExcluida || ruta.endsWith(rutaExcluida)
+  )
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token')
-  if (token) {
+  if (token && !esRutaSinRefresh(config.url)) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
@@ -20,11 +42,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    const original = error.config || {}
+    const refresh = localStorage.getItem('refresh_token')
+    const puedeIntentarRefresh =
+      error.response?.status === 401 &&
+      !original._retry &&
+      Boolean(refresh) &&
+      !esRutaSinRefresh(original.url)
+
+    if (puedeIntentarRefresh) {
       original._retry = true
       try {
-        const refresh = localStorage.getItem('refresh_token')
         const { data } = await axios.post(`${API_URL}/token/refresh/`, { refresh })
         localStorage.setItem('access_token', data.access)
         if (data.refresh) localStorage.setItem('refresh_token', data.refresh)
@@ -32,7 +60,9 @@ api.interceptors.response.use(
         return api(original)
       } catch {
         localStorage.clear()
-        window.location.href = '/login'
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
