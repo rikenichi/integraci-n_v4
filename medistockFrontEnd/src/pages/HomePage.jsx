@@ -18,7 +18,7 @@ const heroSlides = [
   },
   {
     eyebrow: 'Despacho integrado',
-    title: 'Cotiza despacho antes de pagar',
+    title: 'Cotiza tu despacho antes de pagar',
     text: 'Revisa costos y disponibilidad logistica durante la confirmacion del pedido, antes de iniciar el pago.',
     cta: 'Armar pedido',
     ctaTo: '/catalogo',
@@ -28,8 +28,8 @@ const heroSlides = [
   },
   {
     eyebrow: 'Pago seguro',
-    title: 'Paga con Webpay Plus',
-    text: 'El flujo de pago esta preparado para iniciar Webpay desde el pedido y mostrar resultados claros al volver.',
+    title: 'Paga seguro con Webpay Plus en linea',
+    text: 'Inicia el pago desde tu pedido y vuelve a Medistock con un resultado claro para continuar el seguimiento.',
     cta: 'Comprar ahora',
     ctaTo: '/catalogo',
     secondary: 'Mis pedidos',
@@ -49,7 +49,7 @@ const heroSlides = [
 ]
 
 const beneficios = [
-  { titulo: 'Despacho integrado', texto: 'Cotiza envio antes de pagar y sigue tu pedido desde tracking.' },
+  { titulo: 'Despacho integrado', texto: 'Cotiza tu envio antes de pagar y sigue tu pedido desde tracking.' },
   { titulo: 'Pagos seguros', texto: 'Flujo conectado a Webpay Plus para compras B2C y B2B.' },
   { titulo: 'Inventario conectado', texto: 'Productos, stock y precios consumidos desde el backend.' },
 ]
@@ -185,10 +185,10 @@ export default function HomePage() {
         </div>
 
         <button className="hero-arrow hero-arrow-prev" type="button" onClick={() => cambiarSlide(-1)} aria-label="Slide anterior">
-          ‹
+          {'<'}
         </button>
         <button className="hero-arrow hero-arrow-next" type="button" onClick={() => cambiarSlide(1)} aria-label="Slide siguiente">
-          ›
+          {'>'}
         </button>
 
         <div className="hero-dots" aria-label="Seleccionar slide">
@@ -208,7 +208,6 @@ export default function HomePage() {
       <section className="home-section home-products-section">
         <div className="section-heading">
           <h2>Productos destacados</h2>
-          <p>Productos cargados desde el backend para mantener precios y stock consistentes.</p>
         </div>
 
         {loading && <div className="home-state">Cargando productos destacados...</div>}
@@ -256,7 +255,6 @@ export default function HomePage() {
       <section className="home-section home-categories-section">
         <div className="section-heading">
           <h2>Categorias para encontrar rapido</h2>
-          <p>Accesos visuales al catalogo para orientar la navegacion sin depender de recursos externos.</p>
         </div>
 
         <div className="home-categories-grid">
@@ -278,7 +276,6 @@ export default function HomePage() {
         <div className="section-heading offers-heading">
           <div>
             <h2>Promociones visuales</h2>
-            <p>Descuentos simulados solo para presentacion; los productos y precios base vienen del catalogo real.</p>
           </div>
           <Link className="btn-outline" to="/catalogo">
             Ver todas las ofertas
