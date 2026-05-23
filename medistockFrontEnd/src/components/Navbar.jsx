@@ -39,7 +39,7 @@ export default function Navbar() {
         <span>Despacho a todo Chile</span>
         <span>Pago seguro con Webpay Plus</span>
         <span>Stock actualizado en tiempo real</span>
-        <span>Atención para pacientes y clínicas</span>
+        <span>Atencion para pacientes y clinicas</span>
       </div>
 
       <div className="main-header">
@@ -47,7 +47,7 @@ export default function Navbar() {
           <span className="brand-mark">M</span>
           <span>
             <strong>MEDISTOCK</strong>
-            <small>Farmacia e insumos médicos</small>
+            <small>Farmacia e insumos medicos</small>
           </span>
         </Link>
 
@@ -69,7 +69,7 @@ export default function Navbar() {
             <>
               <Link to="/login" className="quick-link">
                 <span>Usuario</span>
-                <small>Iniciar sesión</small>
+                <small>Iniciar sesion</small>
               </Link>
               <Link to="/registro" className="register-link">Crear cuenta</Link>
             </>
@@ -84,11 +84,11 @@ export default function Navbar() {
 
       <nav className="category-nav">
         <Link to="/">Inicio</Link>
-        <Link to="/catalogo">Ofertas</Link>
-        <Link to="/catalogo">Medicamentos</Link>
-        <Link to="/catalogo">Insumos médicos</Link>
-        <Link to="/catalogo">Bienestar</Link>
-        <Link to="/catalogo">Contacto</Link>
+        <Link to="/catalogo?search=ofertas">Ofertas</Link>
+        <Link to="/catalogo?search=medicamentos">Medicamentos</Link>
+        <Link to="/catalogo?search=insumos">Insumos médicos</Link>
+        <Link to="/catalogo?search=bienestar">Bienestar</Link>
+        <Link to="/#contacto">Contacto</Link>
         {usuario && <Link to="/panel">Mi Panel</Link>}
         {usuario && <Link to="/perfil">Mi Perfil</Link>}
       </nav>

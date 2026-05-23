@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { getCategorias, obtenerProductosCompatibles } from '../services/api'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 import './CatalogoPage.css'
 
 function formatPrecio(n) {
@@ -75,7 +76,8 @@ export default function CatalogoPage() {
   }, [filtros])
 
   return (
-    <div className="page-container">
+    <>
+      <div className="page-container">
       <section className="catalogo-hero" aria-label="Beneficios del catalogo MEDISTOCK">
         <div className="catalogo-hero-copy">
           <span className="catalogo-eyebrow">{bannersCatalogo[bannerActivo].badge}</span>
@@ -183,6 +185,8 @@ export default function CatalogoPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }
