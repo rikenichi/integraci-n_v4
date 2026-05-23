@@ -9,7 +9,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Adjunta el token JWT a cada petición automáticamente
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token')
   if (token) {
@@ -18,7 +17,6 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Renueva el token si recibe 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -37,8 +35,18 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error)
-  }
+  },
 )
+
+const esDesarrollo = import.meta.env.DEV
+
+function respuestaDemo(data) {
+  return Promise.resolve({ data, demo: true })
+}
+
+function obtenerListaRespuesta(data) {
+  return data?.results || data || []
+}
 
 // --- Auth ---
 export const login = (username, password) =>
@@ -54,8 +62,8 @@ export const obtenerMisDirecciones = () => api.get('/accounts/mis-direcciones/')
 export const registrarUsuario = (datos) =>
   api.post('/accounts/registro/cliente/', datos)
 
-export const obtenerConveniosInstitucionales = () =>
-  api.get('/usuarios/convenios/')
+// Demo controlado: accounts define convenios, pero aun no expone URL publica.
+export const obtenerConveniosInstitucionales = () => respuestaDemo([])
 
 // --- Productos ---
 export const getProductos = (params = {}) =>
@@ -64,14 +72,8 @@ export const getProductos = (params = {}) =>
 export const getProducto = (codigo) =>
   api.get(`/inventory/public/productos/${codigo}/`)
 
-export const getStockProducto = (codigo) =>
-  api.get('/inventory/catalogo/', { params: { search: codigo } })
-
-const esDesarrollo = import.meta.env.DEV
-
-function obtenerListaRespuesta(data) {
-  return data?.results || data || []
-}
+export const getStockProducto = () =>
+  api.get('/inventory/catalogo/')
 
 function normalizarProducto(item) {
   const stockPorSucursal = item.stock_por_sucursal || []
@@ -103,7 +105,7 @@ function filtrarProductosLocalmente(productos, params = {}) {
   const search = params.search?.trim().toLowerCase()
   return productos.filter((producto) => {
     if (!search) return true
-    return [producto.nombre, producto.codigo, producto.descripcion]
+    return [producto.nombre, producto.codigo, producto.sku, producto.descripcion]
       .filter(Boolean)
       .some((valor) => valor.toLowerCase().includes(search))
   })
@@ -111,14 +113,14 @@ function filtrarProductosLocalmente(productos, params = {}) {
 
 export async function obtenerProductosCompatibles(params = {}) {
   try {
-    if (esDesarrollo) console.info('Usando endpoint actual /api/inventory/catalogo/')
-    const response = await getProductos(params)
-    return obtenerListaRespuesta(response.data).map(normalizarProducto)
-  } catch (error) {
-    if (esDesarrollo) console.info('Fallback a endpoint compatible /api/inventory/catalogo/')
+    if (esDesarrollo) console.info('Usando endpoint real /api/inventory/catalogo/')
     const compatParams = {}
     if (params.categoria) compatParams.categoria_id = params.categoria
-    const response = await api.get('/inventory/catalogo/', { params: compatParams })
+    const response = await getProductos(compatParams)
+    const productos = obtenerListaRespuesta(response.data).map(normalizarProducto)
+    return filtrarProductosLocalmente(productos, params)
+  } catch {
+    const response = await api.get('/inventory/catalogo/')
     const productos = obtenerListaRespuesta(response.data).map(normalizarProducto)
     return filtrarProductosLocalmente(productos, params)
   }
@@ -141,59 +143,111 @@ export async function obtenerProductoCompatible(codigo) {
 }
 
 export async function obtenerStockProductoCompatible(codigo) {
-  try {
-    const response = await getStockProducto(codigo)
-    const lista = obtenerListaRespuesta(response.data)
-    const item = lista.find((producto) =>
-      String(producto.codigo || producto.sku || producto.id) === String(codigo)
-    )
-    if (!item) return response.data
-    return {
-      producto: item.sku || item.codigo || `PROD-${item.id}`,
-      stock_por_sucursal: (item.stock_por_sucursal || []).map((stock) => ({
-        sucursal_id: stock.sucursal_id,
-        sucursal: stock.sucursal_nombre,
-        ciudad: stock.ciudad || '-',
-        disponible: Number(stock.stock_neto ?? stock.disponible ?? 0),
-      })),
-    }
-  } catch {
-    const response = await api.get('/inventory/catalogo/')
-    const item = obtenerListaRespuesta(response.data).find((producto) =>
-      String(producto.codigo || producto.sku || producto.id) === String(codigo)
-    )
-    if (!item) throw new Error('Stock no encontrado')
-    return {
-      producto: item.sku || item.codigo || `PROD-${item.id}`,
-      stock_por_sucursal: (item.stock_por_sucursal || []).map((stock) => ({
-        sucursal_id: stock.sucursal_id,
-        sucursal: stock.sucursal_nombre,
-        ciudad: stock.ciudad || '-',
-        disponible: Number(stock.stock_neto ?? stock.disponible ?? 0),
-      })),
-    }
+  const response = await getStockProducto()
+  const item = obtenerListaRespuesta(response.data).find((producto) =>
+    String(producto.codigo || producto.sku || producto.id) === String(codigo)
+  )
+  if (!item) throw new Error('Stock no encontrado')
+  return {
+    producto: item.sku || item.codigo || `PROD-${item.id}`,
+    stock_por_sucursal: (item.stock_por_sucursal || []).map((stock) => ({
+      sucursal_id: stock.sucursal_id,
+      sucursal: stock.sucursal_nombre,
+      ciudad: stock.ciudad || '-',
+      disponible: Number(stock.stock_neto ?? stock.disponible ?? 0),
+    })),
   }
 }
 
-export const obtenerResumenInventario = () =>
-  api.get('/stock/resumen-inventario/')
+function normalizarInventarioResumen(inventarios = [], lotes = [], movimientos = []) {
+  const stockCritico = inventarios
+    .map((item) => ({
+      producto_id: item.lote?.producto?.id || item.lote?.producto_id,
+      producto_codigo: item.lote?.producto?.sku || item.producto_codigo,
+      producto_nombre: item.lote?.producto?.nombre || item.producto_nombre || 'Producto no informado',
+      sucursal_nombre: item.sucursal_nombre || `Sucursal ${item.sucursal}`,
+      cantidad: item.cantidad_disponible,
+      cantidad_reservada: item.cantidad_reservada,
+      disponible: item.stock_neto ?? Number(item.cantidad_disponible || 0) - Number(item.cantidad_reservada || 0),
+      stock_minimo: item.stock_critico,
+    }))
+    .filter((item) => Number(item.disponible) <= Number(item.stock_minimo || 0))
+
+  const hoy = new Date()
+  const limite = new Date()
+  limite.setDate(hoy.getDate() + 45)
+
+  const lotesAlertados = lotes
+    .filter((lote) => lote.fecha_vencimiento)
+    .map((lote) => {
+      const vence = new Date(`${lote.fecha_vencimiento}T00:00:00`)
+      return {
+        producto_nombre: lote.producto?.nombre || 'Producto no informado',
+        codigo_lote: lote.codigo_lote,
+        sucursal_nombre: '-',
+        fecha_vencimiento: lote.fecha_vencimiento,
+        cantidad_disponible: '-',
+        estado_lote: vence < hoy ? 'vencido' : 'proximo_vencer',
+        _vence: vence,
+      }
+    })
+    .filter((lote) => lote._vence <= limite)
+    .map(({ _vence, ...lote }) => lote)
+
+  const movimientosRecientes = movimientos.slice(0, 10).map((movimiento) => ({
+    creado_en: movimiento.fecha_movimiento,
+    producto_nombre: movimiento.producto_nombre || movimiento.inventario_producto_nombre || '-',
+    sucursal_nombre: movimiento.sucursal_nombre || '-',
+    lote_codigo: movimiento.lote_codigo || '-',
+    tipo_movimiento: movimiento.tipo_movimiento,
+    cantidad: movimiento.cantidad,
+    referencia: movimiento.pedido || movimiento.compra_proveedor || movimiento.traslado_inventario || '-',
+    usuario: movimiento.usuario_nombre || movimiento.usuario || '-',
+    motivo: movimiento.motivo,
+  }))
+
+  return {
+    stock_critico: stockCritico,
+    lotes_proximos_vencer: lotesAlertados,
+    movimientos_recientes: movimientosRecientes,
+  }
+}
+
+export async function obtenerResumenInventario() {
+  const [inventariosR, lotesR, movimientosR] = await Promise.all([
+    api.get('/inventory/inventarios/'),
+    api.get('/inventory/lotes/'),
+    api.get('/inventory/movimientos/'),
+  ])
+
+  return {
+    data: normalizarInventarioResumen(
+      obtenerListaRespuesta(inventariosR.data),
+      obtenerListaRespuesta(lotesR.data),
+      obtenerListaRespuesta(movimientosR.data),
+    ),
+  }
+}
 
 // --- Compras internas ---
-export const obtenerProveedores = () => api.get('/compras/proveedores/')
-export const obtenerOrdenesCompra = () => api.get('/compras/ordenes/')
+// Demo controlado: procurement tiene modelos, pero aun no expone URLs en backend.
+export const obtenerProveedores = () => respuestaDemo([])
+export const obtenerOrdenesCompra = () => respuestaDemo([])
 
 // --- Traslados de inventario ---
-export const obtenerTrasladosInventario = () => api.get('/stock/traslados/')
-export const marcarTrasladoEnTransito = (id) => api.post(`/stock/traslados/${id}/marcar-en-transito/`)
-export const marcarTrasladoRecibido = (id) => api.post(`/stock/traslados/${id}/marcar-recibido/`)
-export const cancelarTrasladoInventario = (id) => api.post(`/stock/traslados/${id}/cancelar/`)
+export const obtenerTrasladosInventario = () => api.get('/inventory/traslados/')
+// Demo controlado: el backend lista traslados, pero no tiene acciones especificas para estados.
+export const marcarTrasladoEnTransito = (id) => respuestaDemo({ id, estado: 'EN_TRANSITO' })
+export const marcarTrasladoRecibido = (id) => respuestaDemo({ id, estado: 'RECIBIDO' })
+export const cancelarTrasladoInventario = (id) => respuestaDemo({ id, estado: 'CANCELADO' })
 
-// --- Integraciones y auditoría ---
-export const obtenerIntegracionesExternas = () => api.get('/integraciones/integraciones/')
-export const obtenerRegistrosIntegracion = () => api.get('/integraciones/registros/')
-export const obtenerAuditoriaEventos = () => api.get('/integraciones/auditoria/')
+// --- Integraciones y auditoria ---
+// Demo controlado: integrations tiene modelos, pero aun no expone URLs en backend.
+export const obtenerIntegracionesExternas = () => respuestaDemo([])
+export const obtenerRegistrosIntegracion = () => respuestaDemo([])
+export const obtenerAuditoriaEventos = () => respuestaDemo([])
 
-// --- Categorías ---
+// --- Categorias ---
 export const getCategorias = () => api.get('/inventory/public/categorias/')
 
 // --- Pedidos ---
@@ -203,26 +257,63 @@ export const getPedidosTodos = () => api.get('/orders/pedidos/todos/')
 export const getPedido = (id) => api.get(`/orders/pedidos/${id}/`)
 export const obtenerPedidoDetalle = getPedido
 export const aprobarPedido = (id) => api.post(`/orders/pedidos/${id}/aprobar/`)
-export const obtenerAprobacionesB2B = () => api.get('/pedidos/aprobaciones/')
-export const aprobarRevisionB2B = (id) => api.post(`/pedidos/aprobaciones/${id}/aprobar/`)
-export const rechazarRevisionB2B = (id) => api.post(`/pedidos/aprobaciones/${id}/rechazar/`)
-export const observarRevisionB2B = (id) => api.post(`/pedidos/aprobaciones/${id}/observar/`)
+// Demo controlado: no existe endpoint separado para revisiones B2B.
+export const obtenerAprobacionesB2B = () => respuestaDemo([])
+export const aprobarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'aprobado' })
+export const rechazarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'rechazado' })
+export const observarRevisionB2B = (id) => respuestaDemo({ id, estado_aprobacion: 'observado' })
 
 // --- Pagos ---
-export const simularPago = (datos) => api.post('/pagos/simular/', datos)
+// Demo controlado: el backend real disponible para pagos es Webpay en /payments/.
+export const simularPago = (datos) => {
+  const numero = String(datos.numero_tarjeta || '').replace(/\s+/g, '')
+  const aprobado = datos.metodo === 'transferencia' || !numero.endsWith('0000')
+  return respuestaDemo({
+    aprobado,
+    pedido_id: datos.pedido_id,
+    metodo: datos.metodo,
+    metodo_display: datos.metodo === 'transferencia'
+      ? 'Transferencia bancaria'
+      : datos.metodo === 'tarjeta_debito'
+        ? 'Tarjeta de debito'
+        : 'Tarjeta de credito',
+    monto: datos.monto || 0,
+    estado_display: aprobado ? 'Aprobado demo' : 'Rechazado demo',
+    codigo_transaccion: `DEMO-${Date.now()}`,
+    motivo_rechazo: aprobado ? '' : 'Tarjeta demo terminada en 0000.',
+  })
+}
 export const getPagos = () => api.get('/payments/mis-pagos/')
-export const obtenerConciliacionesPago = () => api.get('/pagos/conciliaciones/')
+// Demo controlado: conciliacion financiera aun no tiene URL backend.
+export const obtenerConciliacionesPago = () => respuestaDemo([])
 export const actualizarConciliacionPago = (id, datos) =>
-  api.patch(`/pagos/conciliaciones/${id}/`, datos)
+  respuestaDemo({ id, ...datos })
 
 // --- DTE simulado ---
-export const obtenerDocumentosTributarios = () => api.get('/dte/documentos/')
-export const obtenerDocumentoTributarioDetalle = (id) => api.get(`/dte/documentos/${id}/`)
+// Demo controlado: billing tiene modelos DTE, pero aun no expone URLs.
+export const obtenerDocumentosTributarios = () => respuestaDemo([])
+export const obtenerDocumentoTributarioDetalle = (id) => respuestaDemo({
+  id,
+  pedido: null,
+  tipo_documento_nombre: 'DTE demo',
+  folio: `DEMO-${id}`,
+  fecha_emision: new Date().toISOString(),
+  estado_dte: 'GENERADO_DEMO',
+  monto_total: 0,
+  detalles: [],
+})
 export const generarDteDesdePedido = (pedidoId) =>
-  api.post(`/dte/documentos/generar-desde-pedido/${pedidoId}/`)
+  respuestaDemo({
+    id: `demo-${pedidoId}`,
+    pedido: pedidoId,
+    tipo_documento_nombre: 'DTE demo',
+    folio: `DEMO-${pedidoId}`,
+    fecha_emision: new Date().toISOString(),
+    estado_dte: 'GENERADO_DEMO',
+    monto_total: 0,
+  })
 
 // --- WebPay Plus (Transbank, ambiente TEST) ---
-// Inicia transacción real: devuelve { redirect_url } para redirigir a Transbank
 export const iniciarWebpay = (pedidoId) =>
   api.post('/payments/webpay/iniciar/', { pedido_id: pedidoId })
 export const confirmarWebpay = (token) =>
@@ -232,34 +323,42 @@ export const obtenerEstadoWebpay = (token) =>
 
 // --- Despachos ---
 export const generarTracking = (pedidoId) =>
-  api.post('/logistics/envios/', { pedido_id: pedidoId })
+  respuestaDemo({
+    pedido: pedidoId,
+    numero_tracking: `DEMO-${pedidoId}`,
+    courier: 'Demo courier',
+    estado: 'generado',
+    fecha_estimada_entrega: null,
+    direccion_destino: 'Direccion demo',
+    eventos: [],
+  })
 
-export const getDespacho = (id) => api.get(`/logistics/despachos/${id}/`)
+// Demo controlado: no hay endpoint de listado/detalle de despachos montado.
+export const getDespacho = (id) => respuestaDemo({ id })
 export const getTracking = (pedidoId) => api.get(`/logistics/envios/${pedidoId}/tracking/`)
-export const getDespachos = () => api.get('/logistics/despachos/')
-export const obtenerGuiasDespacho = () => api.get('/logistics/guias/')
-export const marcarGuiaEnTransito = (id) => api.post(`/logistics/guias/${id}/marcar-en-transito/`)
-export const marcarGuiaEntregada = (id) => api.post(`/logistics/guias/${id}/marcar-entregada/`)
-export const anularGuiaDespacho = (id) => api.post(`/logistics/guias/${id}/anular/`)
+export const getDespachos = () => respuestaDemo([])
+// Demo controlado: billing define GuiaDespacho, pero aun no expone URLs.
+export const obtenerGuiasDespacho = () => respuestaDemo([])
+export const marcarGuiaEnTransito = (id) => respuestaDemo({ id, estado: 'en_transito' })
+export const marcarGuiaEntregada = (id) => respuestaDemo({ id, estado: 'entregada' })
+export const anularGuiaDespacho = (id) => respuestaDemo({ id, estado: 'anulada' })
 
 // --- Courier experimental ---
-// Cotiza el costo de envío sin crear ningún despacho.
-// pedido_id es opcional; si no existe aún, omitirlo.
 export const getRegionesCourier = () => api.get('/locations/regions/')
 export const getComunasCourier = (region) =>
   api.get('/locations/comunas/', { params: { region_id: region } })
 export const obtenerRegionesDespacho = getRegionesCourier
 export const obtenerComunasDespacho = (regionId) =>
-    api.get('/locations/comunas/', {
-      params: { region_id: regionId },
-    })
+  api.get('/locations/comunas/', {
+    params: { region_id: regionId },
+  })
 export const cotizarDespacho = (payload) => api.post('/logistics/cotizar/', payload)
-// Genera una guía de despacho vía courier externo (requiere rol operador/admin).
 export const generarCourier = (pedidoId, courier = 'mock') =>
-  api.post('/logistics/envios/', { pedido_id: pedidoId, courier })
+  respuestaDemo({ pedido: pedidoId, courier, estado: 'generado' })
 export const getCourierTracking = (numeroTracking) =>
-  api.get(`/logistics/courier-tracking/${numeroTracking}/`)
+  respuestaDemo({ numero_tracking: numeroTracking, eventos: [] })
 export const obtenerSucursalDespacho = (sucursalId) =>
-    api.get(`/locations/sucursales/${sucursalId}/`)
+  api.get(`/locations/sucursales/${sucursalId}/`)
 export const crearDireccionEntrega = (payload) => api.post('/accounts/mis-direcciones/', payload)
+
 export default api

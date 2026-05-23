@@ -33,7 +33,8 @@ function obtenerLista(data) {
 }
 
 function getEstado(estado) {
-  return ESTADOS[estado] || { label: estado || 'Sin estado', clase: 'badge-secondary' }
+  const normalizado = String(estado || '').toLowerCase()
+  return ESTADOS[normalizado] || { label: estado || 'Sin estado', clase: 'badge-secondary' }
 }
 
 export default function TrasladosInventarioPage() {
@@ -145,10 +146,11 @@ export default function TrasladosInventarioPage() {
               <tbody>
                 {traslados.map(traslado => {
                   const estado = getEstado(traslado.estado)
+                  const estadoNormalizado = String(traslado.estado || '').toLowerCase()
                   const bloqueado = accionandoId === traslado.id
-                  const mostrarEnTransito = ['borrador', 'solicitado'].includes(traslado.estado)
-                  const mostrarRecibido = traslado.estado === 'en_transito'
-                  const mostrarCancelar = !['recibido', 'cancelado'].includes(traslado.estado)
+                  const mostrarEnTransito = ['borrador', 'solicitado'].includes(estadoNormalizado)
+                  const mostrarRecibido = estadoNormalizado === 'en_transito'
+                  const mostrarCancelar = !['recibido', 'cancelado'].includes(estadoNormalizado)
 
                   return (
                     <tr key={traslado.id}>

@@ -92,33 +92,58 @@ expone una vista de inicio; las rutas utiles estan bajo `/api/` y `/admin/`.
 | Pago Webpay | `/api/payments/webpay/iniciar/`, commit y estado |
 | Pagos del cliente | `/api/payments/mis-pagos/` |
 | Tracking | `/api/logistics/envios/<pedido_id>/tracking/` |
+| Traslados de inventario | `/api/inventory/traslados/` para listado |
+| Resumen de inventario del panel | `/api/inventory/inventarios/`, `/api/inventory/lotes/`, `/api/inventory/movimientos/` |
 
-## Endpoints usados por frontend que siguen pendientes o demo
+## Funciones frontend alineadas en etapa 2
 
-Las siguientes rutas aparecen en `src/services/api.js`, pero no se detectaron
-montadas en las URL del backend actual:
+En `medistockFrontEnd/src/services/api.js` se quitaron llamadas HTTP a rutas no
+montadas cuando no habia un endpoint real equivalente. El criterio aplicado fue:
+usar endpoint real si existe; si no existe, responder desde un demo controlado
+para que la pantalla no falle por 404.
+
+| Funcion frontend | Estado actual |
+| --- | --- |
+| `obtenerTrasladosInventario` | Conectada a `/api/inventory/traslados/` |
+| `obtenerResumenInventario` | Compuesta desde endpoints reales de inventario |
+| `simularPago` | Demo local controlado; Webpay real sigue en `/api/payments/webpay/iniciar/` |
+| `obtenerProveedores`, `obtenerOrdenesCompra` | Demo controlado |
+| `obtenerIntegracionesExternas`, `obtenerRegistrosIntegracion`, `obtenerAuditoriaEventos` | Demo controlado |
+| `obtenerConveniosInstitucionales` | Demo controlado |
+| `obtenerAprobacionesB2B` y acciones | Demo controlado |
+| `obtenerConciliacionesPago` y actualizacion | Demo controlado |
+| `obtenerDocumentosTributarios`, `generarDteDesdePedido`, detalle DTE | Demo controlado |
+| `getDespachos`, `obtenerGuiasDespacho` y acciones | Demo controlado |
+| `generarTracking`, `generarCourier`, `getCourierTracking` | Demo controlado |
+
+## Endpoints backend pendientes
 
 | Area | Endpoints frontend |
 | --- | --- |
-| Convenios | `/api/usuarios/convenios/` |
-| Resumen inventario | `/api/stock/resumen-inventario/` |
-| Traslados UI | `/api/stock/traslados/` y acciones por traslado |
-| Compras proveedor | `/api/compras/proveedores/`, `/api/compras/ordenes/` |
-| Integraciones | `/api/integraciones/integraciones/`, `/api/integraciones/registros/`, `/api/integraciones/auditoria/` |
-| Aprobaciones B2B | `/api/pedidos/aprobaciones/` y acciones |
-| Pago simulado y conciliacion | `/api/pagos/simular/`, `/api/pagos/conciliaciones/` |
-| DTE demo | `/api/dte/documentos/` y generacion desde pedido |
-| Despachos y guias | `/api/logistics/despachos/`, `/api/logistics/guias/` |
-| Courier experimental | `/api/logistics/courier-tracking/<tracking>/` |
+| Convenios institucionales | URL backend para listar convenios de `accounts.ConvenioInstitucion` |
+| Acciones de traslados | Endpoints o contrato PATCH para transicion de estados |
+| Compras proveedor | URLs para `procurement.Proveedor` y `procurement.CompraProveedor` |
+| Integraciones | URLs para `integrations.IntegracionExterna` y `integrations.RegistroIntegracion` |
+| Auditoria | Modelo/API de auditoria si se mantiene esa pantalla |
+| Aprobaciones B2B | URL separada si se requiere una bandeja distinta a `/api/orders/pedidos/<id>/aprobar/` |
+| Pago simulado | Endpoint backend solo si se quiere persistir pagos demo |
+| Conciliacion de pagos | URL financiera si se requiere persistencia de conciliaciones |
+| DTE y guias | URLs para `billing.DocumentoTributario` y `billing.GuiaDespacho` |
+| Despachos | URL de listado/detalle para `logistics.Despacho` |
+| Creacion simple de tracking | Contrato separado o payload completo para crear OT Chilexpress |
+| Tracking courier directo | URL si se desea consultar por numero de tracking en vez de por pedido |
 
 ## Estado de pantallas demo o parciales
 
-- `ResultadoPagoPage` separa Webpay real de metodos de pago simulados.
-- `ComprobanteDtePage` presenta un comprobante tributario simulado.
-- `GuiasDespachoPage` presenta documentacion de despacho simulada.
+- `ResultadoPagoPage` separa Webpay real de metodos de pago simulados; el demo
+  ya no llama a una ruta backend inexistente.
+- `ComprobanteDtePage` presenta un comprobante tributario simulado con datos
+  retornados por el servicio frontend.
+- `GuiasDespachoPage` presenta documentacion de despacho simulada sin llamar
+  `/api/logistics/guias/`.
 - Compras proveedor, integraciones, conciliacion, convenios institucionales,
-  aprobaciones B2B y parte del panel administrativo dependen de endpoints
-  pendientes o de una futura separacion explicita de mocks.
+  aprobaciones B2B y parte del panel administrativo quedan como demo explicito
+  hasta que se expongan URLs backend.
 
 ## Proximos puntos de integracion
 

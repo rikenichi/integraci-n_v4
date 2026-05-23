@@ -39,7 +39,7 @@ export default function ResultadoPagoPage() {
       .finally(() => setLoading(false))
   }, [pedidoId])
 
-  // Flujo simulado — llama a POST /api/pagos/simular/
+  // Flujo demo local: no llama a rutas backend pendientes.
   const handlePagoSimulado = async () => {
     setProcesando(true)
     setError('')
@@ -49,6 +49,7 @@ export default function ResultadoPagoPage() {
         metodo: metodoPago,
         numero_tarjeta: numeroCuenta,
         nombre_titular: titularCuenta,
+        monto: pedido?.total || 0,
       })
       setResultado(data)
     } catch (err) {
@@ -167,7 +168,7 @@ export default function ResultadoPagoPage() {
           <div className="card">
             <h3 className="section-title">Selecciona método de pago</h3>
 
-            {/* Sección 1: WebPay Plus real (llama a /api/pagos/webpay/crear/) */}
+            {/* Sección 1: WebPay Plus real (llama a /api/payments/webpay/iniciar/) */}
             <div className="webpay-real-box">
               <div className="webpay-real-header">
                 <span className="webpay-logo">🏦</span>
