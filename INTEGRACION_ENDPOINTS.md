@@ -104,16 +104,20 @@ para que la pantalla no falle por 404.
 
 | Funcion frontend | Estado actual |
 | --- | --- |
-| `obtenerTrasladosInventario` | Conectada a `/api/inventory/traslados/` |
+| `obtenerTrasladosInventario` | Conectada a `/api/inventory/traslados/`; pantalla en modo consulta real |
 | `obtenerResumenInventario` | Compuesta desde endpoints reales de inventario |
 | `simularPago` | Demo local controlado; Webpay real sigue en `/api/payments/webpay/iniciar/` |
 | `obtenerProveedores`, `obtenerOrdenesCompra` | Demo controlado |
 | `obtenerIntegracionesExternas`, `obtenerRegistrosIntegracion`, `obtenerAuditoriaEventos` | Demo controlado |
 | `obtenerConveniosInstitucionales` | Demo controlado |
-| `obtenerAprobacionesB2B` y acciones | Demo controlado |
-| `obtenerConciliacionesPago` y actualizacion | Demo controlado |
+| `obtenerAprobacionesB2B` | Conectada a `/api/orders/pedidos/todos/`; normaliza pedidos reales como bandeja B2B |
+| `aprobarRevisionB2B`, `rechazarRevisionB2B` | Conectadas a `/api/orders/pedidos/<id>/aprobar/` |
+| `observarRevisionB2B` | Demo local no persistente; no existe accion equivalente en backend |
+| `obtenerConciliacionesPago` | Conectada a `/api/payments/mis-pagos/`; normaliza pagos reales para revision financiera |
+| `actualizarConciliacionPago` | Demo local no persistente; no existe URL backend para persistir conciliacion |
 | `obtenerDocumentosTributarios`, `generarDteDesdePedido`, detalle DTE | Demo controlado |
-| `getDespachos`, `obtenerGuiasDespacho` y acciones | Demo controlado |
+| `getDespachos` | Demo vacio controlado; no existe listado de despachos montado |
+| `GuiasDespachoPage` | Pendiente backend; no muestra guias simuladas |
 | `generarTracking`, `generarCourier`, `getCourierTracking` | Demo controlado |
 
 ## Endpoints backend pendientes
@@ -139,11 +143,15 @@ para que la pantalla no falle por 404.
   ya no llama a una ruta backend inexistente.
 - `ComprobanteDtePage` presenta un comprobante tributario simulado con datos
   retornados por el servicio frontend.
-- `GuiasDespachoPage` presenta documentacion de despacho simulada sin llamar
-  `/api/logistics/guias/`.
-- Compras proveedor, integraciones, conciliacion, convenios institucionales,
-  aprobaciones B2B y parte del panel administrativo quedan como demo explicito
-  hasta que se expongan URLs backend.
+- `GuiasDespachoPage` queda como modulo pendiente y no muestra fixtures, porque
+  no existe endpoint real de listado/gestion de guias de despacho.
+- Compras proveedor, integraciones, convenios institucionales y parte del panel
+  administrativo quedan como demo explicito hasta que se expongan URLs backend.
+- Aprobaciones B2B usa pedidos reales y persiste aprobar/rechazar; observar
+  sigue local porque no hay endpoint equivalente.
+- Conciliacion de pagos usa pagos reales desde `/api/payments/mis-pagos/`; los
+  cambios de estado de conciliacion siguen locales porque no hay endpoint
+  financiero de conciliacion montado.
 
 ## Proximos puntos de integracion
 
