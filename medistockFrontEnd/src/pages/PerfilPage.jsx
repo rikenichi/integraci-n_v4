@@ -227,6 +227,17 @@ function normalizarId(valor) {
   return /^\d+$/.test(texto) ? Number(texto) : texto
 }
 
+function mensajeErrorApi(err, fallback) {
+  if (!err.response) return 'No fue posible conectar con el backend.'
+  if (err.response.status === 403) return 'No tienes permisos para consultar esta información.'
+  if (err.response.status === 404) return 'No se encontró información asociada.'
+  if (err.response.status === 500) return 'Error del servidor. Intenta nuevamente.'
+  const data = err.response?.data
+  if (data?.detail) return data.detail
+  if (data?.error) return data.error
+  return fallback
+}
+
 export default function PerfilPage() {
   const { usuario, actualizarPerfilUsuario } = useAuth()
   const [perfil, setPerfil] = useState(null)
@@ -326,7 +337,7 @@ export default function PerfilPage() {
         setForm(iniciales)
         setOriginal(iniciales)
       })
-      .catch(() => setErrorGeneral('No se pudieron cargar los datos del perfil.'))
+      .catch((err) => setErrorGeneral(mensajeErrorApi(err, 'No se pudieron cargar los datos del perfil.')))
       .finally(() => setCargando(false))
   }, [])
 
@@ -416,7 +427,7 @@ export default function PerfilPage() {
           setErrorGeneral(JSON.stringify(data))
         }
       } else {
-        setErrorGeneral('No se pudo actualizar el perfil. Intente nuevamente.')
+        setErrorGeneral(mensajeErrorApi(err, 'No se pudo actualizar el perfil. Intente nuevamente.'))
       }
     } finally {
       setGuardando(false)

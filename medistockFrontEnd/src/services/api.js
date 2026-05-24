@@ -75,24 +75,6 @@ function respuestaDemo(data) {
   return Promise.resolve({ data, demo: true })
 }
 
-let demoGuiasDespacho = [
-  {
-    id: 1,
-    numero_guia: 'GD-DEMO-0001',
-    pedido: 1024,
-    pedido_numero: 1024,
-    despacho_tracking: 'DEMO-1024',
-    fecha_emision: '2026-05-20T13:00:00Z',
-    motivo_traslado: 'Venta online',
-    transportista: 'Chilexpress demo',
-    patente_vehiculo: 'MEDI-01',
-    direccion_origen: 'Sucursal Central',
-    direccion_destino: 'Direccion de entrega demo',
-    estado: 'emitida',
-    observacion: 'Demo documental; no genera guia backend.',
-  },
-]
-
 const DEMO_PROVEEDORES = [
   {
     id: 1,
@@ -489,10 +471,6 @@ export const obtenerOrdenesCompra = () => respuestaDemo(DEMO_ORDENES_COMPRA)
 
 // --- Traslados de inventario ---
 export const obtenerTrasladosInventario = () => api.get('/inventory/traslados/')
-// Demo controlado: el backend lista traslados, pero no tiene acciones especificas para estados.
-export const marcarTrasladoEnTransito = (id) => respuestaDemo({ id, estado: 'EN_TRANSITO' })
-export const marcarTrasladoRecibido = (id) => respuestaDemo({ id, estado: 'RECIBIDO' })
-export const cancelarTrasladoInventario = (id) => respuestaDemo({ id, estado: 'CANCELADO' })
 
 // --- Integraciones y auditoria ---
 // Demo controlado: integrations tiene modelos, pero aun no expone URLs en backend.
@@ -613,26 +591,6 @@ export const generarTracking = (pedidoId) =>
 export const getDespacho = (id) => respuestaDemo({ id })
 export const getTracking = (pedidoId) => api.get(`/logistics/envios/${pedidoId}/tracking/`)
 export const getDespachos = () => respuestaDemo([])
-// Demo controlado: billing define GuiaDespacho, pero aun no expone URLs.
-export const obtenerGuiasDespacho = () => respuestaDemo(demoGuiasDespacho)
-export const marcarGuiaEnTransito = (id) => {
-  demoGuiasDespacho = demoGuiasDespacho.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado: 'en_transito' } : item
-  )
-  return respuestaDemo({ id, estado: 'en_transito' })
-}
-export const marcarGuiaEntregada = (id) => {
-  demoGuiasDespacho = demoGuiasDespacho.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado: 'entregada' } : item
-  )
-  return respuestaDemo({ id, estado: 'entregada' })
-}
-export const anularGuiaDespacho = (id) => {
-  demoGuiasDespacho = demoGuiasDespacho.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado: 'anulada' } : item
-  )
-  return respuestaDemo({ id, estado: 'anulada' })
-}
 
 // --- Courier experimental ---
 export const getRegionesCourier = () => api.get('/locations/regions/')

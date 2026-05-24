@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import {
-  cancelarTrasladoInventario,
-  marcarTrasladoEnTransito,
-  marcarTrasladoRecibido,
-  obtenerTrasladosInventario,
-} from '../services/api'
+import { obtenerTrasladosInventario } from '../services/api'
 import './TrasladosInventarioPage.css'
 
 const ROLES_INTERNOS = ['admin', 'operador', 'analista']
@@ -14,7 +9,8 @@ const ROLES_INTERNOS = ['admin', 'operador', 'analista']
 const ESTADOS = {
   borrador: { label: 'Borrador', clase: 'badge-secondary' },
   solicitado: { label: 'Solicitado', clase: 'badge-info' },
-  en_transito: { label: 'En tránsito', clase: 'badge-warning' },
+  aprobado: { label: 'Aprobado', clase: 'badge-info' },
+  en_transito: { label: 'En transito', clase: 'badge-warning' },
   recibido: { label: 'Recibido', clase: 'badge-success' },
   cancelado: { label: 'Cancelado', clase: 'badge-danger' },
 }
@@ -37,13 +33,20 @@ function getEstado(estado) {
   return ESTADOS[normalizado] || { label: estado || 'Sin estado', clase: 'badge-secondary' }
 }
 
+function mensajeError(e) {
+  if (!e.response) return 'No fue posible conectar con el backend.'
+  if (e.response.status === 403) return 'No tienes permisos para consultar esta información.'
+  if (e.response.status === 404) return 'No se encontró información asociada.'
+  if (e.response.status === 500) return 'Error del servidor. Intenta nuevamente.'
+  return e.response?.data?.detail || e.response?.data?.error || 'No se pudieron cargar los traslados de inventario.'
+}
+
 export default function TrasladosInventarioPage() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [traslados, setTraslados] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [accionandoId, setAccionandoId] = useState(null)
 
   const autorizado = ROLES_INTERNOS.includes(usuario?.rol)
 
@@ -54,7 +57,7 @@ export default function TrasladosInventarioPage() {
       const { data } = await obtenerTrasladosInventario()
       setTraslados(obtenerLista(data))
     } catch (e) {
-      setError(e.response?.data?.detail || 'No se pudieron cargar los traslados de inventario.')
+      setError(mensajeError(e))
     } finally {
       setLoading(false)
     }
@@ -63,19 +66,6 @@ export default function TrasladosInventarioPage() {
   useEffect(() => {
     if (autorizado) cargarDatos()
   }, [autorizado])
-
-  const ejecutarAccion = async (id, accion) => {
-    setAccionandoId(id)
-    setError('')
-    try {
-      await accion(id)
-      await cargarDatos()
-    } catch (e) {
-      setError(e.response?.data?.detail || 'No se pudo actualizar el traslado.')
-    } finally {
-      setAccionandoId(null)
-    }
-  }
 
   if (!autorizado) {
     return (
@@ -88,7 +78,7 @@ export default function TrasladosInventarioPage() {
         <div className="card traslados-acceso">
           <h1>Acceso no autorizado</h1>
           <p className="text-muted">
-            Esta vista está disponible solo para roles internos de MEDISTOCK.
+            Esta vista esta disponible solo para roles internos de MEDISTOCK.
           </p>
         </div>
       </div>
@@ -102,7 +92,7 @@ export default function TrasladosInventarioPage() {
           <p className="traslados-kicker">Inventario interno</p>
           <h1 className="page-title">Traslados de inventario</h1>
           <p className="text-muted">
-            Seguimiento administrativo de transferencias entre sucursales.
+            Consulta real de transferencias entre sucursales. Las transiciones de estado quedan pendientes de endpoint backend.
           </p>
         </div>
         <div className="traslados-toolbar">
@@ -136,28 +126,23 @@ export default function TrasladosInventarioPage() {
                   <th>Destino</th>
                   <th>Usuario</th>
                   <th>Solicitud</th>
-                  <th>Envío</th>
-                  <th>Recepción</th>
+                  <th>Envio</th>
+                  <th>Recepcion</th>
                   <th>Estado</th>
-                  <th>Observación</th>
+                  <th>Observacion</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {traslados.map(traslado => {
                   const estado = getEstado(traslado.estado)
-                  const estadoNormalizado = String(traslado.estado || '').toLowerCase()
-                  const bloqueado = accionandoId === traslado.id
-                  const mostrarEnTransito = ['borrador', 'solicitado'].includes(estadoNormalizado)
-                  const mostrarRecibido = estadoNormalizado === 'en_transito'
-                  const mostrarCancelar = !['recibido', 'cancelado'].includes(estadoNormalizado)
 
                   return (
                     <tr key={traslado.id}>
                       <td>#{traslado.id}</td>
                       <td>{traslado.sucursal_origen_nombre || '-'}</td>
                       <td>{traslado.sucursal_destino_nombre || '-'}</td>
-                      <td>{traslado.usuario_username || '-'}</td>
+                      <td>{traslado.usuario_username || traslado.solicitado_por || '-'}</td>
                       <td>{formatFecha(traslado.fecha_solicitud)}</td>
                       <td>{formatFecha(traslado.fecha_envio)}</td>
                       <td>{formatFecha(traslado.fecha_recepcion)}</td>
@@ -167,33 +152,7 @@ export default function TrasladosInventarioPage() {
                       <td>{traslado.observacion || '-'}</td>
                       <td>
                         <div className="traslados-acciones">
-                          {mostrarEnTransito && (
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              disabled={bloqueado}
-                              onClick={() => ejecutarAccion(traslado.id, marcarTrasladoEnTransito)}
-                            >
-                              Marcar en tránsito
-                            </button>
-                          )}
-                          {mostrarRecibido && (
-                            <button
-                              className="btn btn-success btn-sm"
-                              disabled={bloqueado}
-                              onClick={() => ejecutarAccion(traslado.id, marcarTrasladoRecibido)}
-                            >
-                              Marcar recibido
-                            </button>
-                          )}
-                          {mostrarCancelar && (
-                            <button
-                              className="btn btn-danger btn-sm"
-                              disabled={bloqueado}
-                              onClick={() => ejecutarAccion(traslado.id, cancelarTrasladoInventario)}
-                            >
-                              Cancelar
-                            </button>
-                          )}
+                          <span className="text-muted">Sin acción real disponible</span>
                         </div>
                       </td>
                     </tr>

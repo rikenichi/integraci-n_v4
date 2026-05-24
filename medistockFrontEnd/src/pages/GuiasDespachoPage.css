@@ -49,11 +49,13 @@
 }
 
 .guias-empty,
-.guias-acceso {
+.guias-acceso,
+.guias-pendiente {
   padding: 24px;
 }
 
-.guias-acceso h1 {
+.guias-acceso h1,
+.guias-pendiente h2 {
   margin-top: 0;
 }
 
