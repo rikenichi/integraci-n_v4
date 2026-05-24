@@ -24,6 +24,7 @@ import ConciliacionPagosPage from './pages/ConciliacionPagosPage'
 import ConveniosInstitucionalesPage from './pages/ConveniosInstitucionalesPage'
 import GuiasDespachoPage from './pages/GuiasDespachoPage'
 import AprobacionesB2BPage from './pages/AprobacionesB2BPage'
+import EstadisticasAnalistaPage from './pages/EstadisticasAnalistaPage'
 
 function RutaProtegida({ children }) {
   const { usuario, cargando } = useAuth()
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/panel/convenios-institucionales" element={<RutaProtegida><ConveniosInstitucionalesPage /></RutaProtegida>} />
             <Route path="/panel/guias-despacho" element={<RutaProtegida><GuiasDespachoPage /></RutaProtegida>} />
             <Route path="/panel/aprobaciones-b2b" element={<RutaProtegida><AprobacionesB2BPage /></RutaProtegida>} />
+            <Route path="/panel/estadisticas" element={<RutaProtegida><EstadisticasAnalistaPage /></RutaProtegida>} />
             <Route path="/dte/:id/comprobante" element={<RutaProtegida><ComprobanteDtePage /></RutaProtegida>} />
             <Route path="/pedidos/:id" element={<RutaProtegida><PedidoDetallePage /></RutaProtegida>} />
           </Routes>

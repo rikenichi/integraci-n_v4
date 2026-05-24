@@ -229,6 +229,7 @@ const ROLES_CONCILIACION = ['admin', 'analista']
 const ROLES_CONVENIOS = ['admin', 'ejecutivo', 'analista']
 const ROLES_GUIAS_DESPACHO = ['admin', 'operador', 'analista']
 const ROLES_APROBACIONES_B2B = ['admin', 'ejecutivo', 'analista']
+const ROLES_ESTADISTICAS = ['admin', 'analista']
 
 const ESTADOS_PAGABLES = ['pendiente', 'aprobado']
 const ESTADOS_CON_TRACKING = [
@@ -269,6 +270,7 @@ export default function PanelPage() {
   const puedeVerConvenios = ROLES_CONVENIOS.includes(rol)
   const puedeVerGuiasDespacho = ROLES_GUIAS_DESPACHO.includes(rol)
   const puedeVerAprobacionesB2B = ROLES_APROBACIONES_B2B.includes(rol)
+  const puedeVerEstadisticas = ROLES_ESTADISTICAS.includes(rol)
 
   const tabsDisponibles = useMemo(() => [
     { id: 'pedidos', label: 'Pedidos', visible: true },
@@ -480,6 +482,12 @@ export default function PanelPage() {
             {puedeVerAprobacionesB2B && (
                 <button className="btn btn-secondary" onClick={() => navigate('/panel/aprobaciones-b2b')}>
                   Aprobaciones B2B
+                </button>
+            )}
+
+            {puedeVerEstadisticas && (
+                <button className="btn btn-primary" onClick={() => navigate('/panel/estadisticas')}>
+                  Panel financiero
                 </button>
             )}
           </div>
