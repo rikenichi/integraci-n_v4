@@ -75,37 +75,6 @@ function respuestaDemo(data) {
   return Promise.resolve({ data, demo: true })
 }
 
-let demoAprobacionesB2B = [
-  {
-    id: 1,
-    pedido: 1024,
-    cliente_institucion: 'Clinica Baviera',
-    cliente_username: 'clinica_baviera',
-    pedido_tipo_cliente: 'institucional',
-    pedido_total: 189900,
-    ejecutivo_username: 'ejecutivo_ventas',
-    fecha_revision: '2026-05-20T10:30:00Z',
-    estado_aprobacion: 'pendiente',
-    comentario: 'Demo: bandeja pendiente de endpoint dedicado.',
-  },
-]
-
-let demoConciliacionesPago = [
-  {
-    id: 1,
-    pago: 501,
-    pago_monto: 84990,
-    pago_estado: 'CONFIRMADO',
-    pago_metodo: 'WEBPAY',
-    analista_username: 'analista_finanzas',
-    fecha_conciliacion: null,
-    estado_conciliacion: 'pendiente',
-    observacion: 'Demo: conciliacion financiera sin persistencia backend.',
-    creado_en: '2026-05-20T12:00:00Z',
-    actualizado_en: '2026-05-20T12:00:00Z',
-  },
-]
-
 let demoGuiasDespacho = [
   {
     id: 1,
@@ -260,6 +229,66 @@ function normalizarRespuestaPedido(response) {
     data: Array.isArray(response.data)
       ? response.data.map(normalizarPedido)
       : normalizarPedido(response.data),
+  }
+}
+
+function esPedidoInstitucional(pedido = {}) {
+  const tipo = String(pedido.tipo_venta || pedido.pedido_tipo_cliente || pedido.tipo_cliente || '').toLowerCase()
+  return (
+    tipo.includes('b2b') ||
+    tipo.includes('institucional') ||
+    tipo.includes('mayorista') ||
+    tipo.includes('credito') ||
+    Boolean(pedido.cliente_institucion || pedido.institucion_nombre)
+  )
+}
+
+function estadoAprobacionDesdePedido(pedido = {}) {
+  const estado = String(pedido.estado_pedido || pedido.estado || '').toUpperCase()
+  if (estado === 'PENDIENTE') return 'pendiente'
+  if (estado === 'CANCELADO' || estado === 'RECHAZADO') return 'rechazado'
+  if (['APROBADO', 'CONFIRMADO', 'EN_PREPARACION', 'DESPACHADO', 'ENTREGADO'].includes(estado)) {
+    return 'aprobado'
+  }
+  return estado.toLowerCase() || 'pendiente'
+}
+
+function normalizarAprobacionB2B(pedido = {}) {
+  return {
+    id: pedido.id,
+    pedido: pedido.id,
+    cliente_institucion: pedido.cliente_institucion || pedido.institucion_nombre || '',
+    cliente_username: pedido.cliente_username || pedido.cliente_nombre || `Cliente ${pedido.cliente_id || ''}`,
+    pedido_tipo_cliente: pedido.tipo_venta || pedido.tipo_cliente || 'pedido',
+    pedido_total: pedido.total || 0,
+    ejecutivo_username: pedido.ejecutivo_username || '-',
+    fecha_revision: pedido.fecha_actualizacion || pedido.actualizado_en || pedido.fecha_creacion,
+    estado_aprobacion: estadoAprobacionDesdePedido(pedido),
+    comentario: pedido.observacion || 'Pedido real obtenido desde /orders/pedidos/todos/.',
+  }
+}
+
+function estadoConciliacionDesdePago(pago = {}) {
+  const estado = String(pago.estado_pago || pago.webpay_status || '').toUpperCase()
+  const responseCode = pago.response_code
+  if (estado.includes('CONFIRM') || estado.includes('AUTHORIZED') || Number(responseCode) === 0) return 'conciliado'
+  if (estado.includes('RECHAZ') || estado.includes('FAILED') || estado.includes('ANUL')) return 'rechazado'
+  return 'pendiente'
+}
+
+function normalizarConciliacionDesdePago(pago = {}) {
+  return {
+    id: pago.id,
+    pago: pago.id,
+    pago_monto: pago.monto_confirmado ?? pago.pedido_total ?? 0,
+    pago_estado: pago.estado_pago || pago.webpay_status || '-',
+    pago_metodo: pago.metodo_pago || 'WEBPAY',
+    analista_username: '-',
+    fecha_conciliacion: pago.fecha_confirmacion || null,
+    estado_conciliacion: estadoConciliacionDesdePago(pago),
+    observacion: pago.observacion || 'Pago real; acciones de conciliacion no persistentes en backend.',
+    creado_en: pago.fecha_creacion,
+    actualizado_en: pago.fecha_confirmacion || pago.fecha_creacion,
   }
 }
 
@@ -483,25 +512,24 @@ export const getPedidosTodos = async () =>
 export const getPedido = async (id) =>
   normalizarRespuestaPedido(await api.get(`/orders/pedidos/${id}/`))
 export const obtenerPedidoDetalle = getPedido
-export const aprobarPedido = (id) => api.post(`/orders/pedidos/${id}/aprobar/`)
-// Demo controlado: no existe endpoint separado para revisiones B2B.
-export const obtenerAprobacionesB2B = () => respuestaDemo(demoAprobacionesB2B)
-export const aprobarRevisionB2B = (id) => {
-  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'aprobado' } : item
-  )
-  return respuestaDemo({ id, estado_aprobacion: 'aprobado' })
+export const aprobarPedido = (id, accion = 'APROBADO', comentario = '') =>
+  api.post(`/orders/pedidos/${id}/aprobar/`, { accion, comentario })
+export const obtenerAprobacionesB2B = async () => {
+  const response = await getPedidosTodos()
+  const pedidos = obtenerListaRespuesta(response.data)
+  const institucionales = pedidos.filter(esPedidoInstitucional)
+  const base = institucionales.length > 0
+    ? institucionales
+    : pedidos.filter((pedido) => estadoAprobacionDesdePedido(pedido) === 'pendiente')
+
+  return { data: base.map(normalizarAprobacionB2B) }
 }
-export const rechazarRevisionB2B = (id) => {
-  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'rechazado' } : item
-  )
-  return respuestaDemo({ id, estado_aprobacion: 'rechazado' })
-}
+export const aprobarRevisionB2B = (id) =>
+  aprobarPedido(id, 'APROBADO', 'Aprobado desde revision comercial B2B.')
+export const rechazarRevisionB2B = (id) =>
+  aprobarPedido(id, 'RECHAZADO', 'Rechazado desde revision comercial B2B.')
 export const observarRevisionB2B = (id) => {
-  demoAprobacionesB2B = demoAprobacionesB2B.map(item =>
-    Number(item.id) === Number(id) ? { ...item, estado_aprobacion: 'observado' } : item
-  )
+  // DEMO: el backend no expone una accion persistente para dejar pedidos observados.
   return respuestaDemo({ id, estado_aprobacion: 'observado' })
 }
 
@@ -526,15 +554,15 @@ export const simularPago = (datos) => {
   })
 }
 export const getPagos = () => api.get('/payments/mis-pagos/')
-// Demo controlado: conciliacion financiera aun no tiene URL backend.
-export const obtenerConciliacionesPago = () => respuestaDemo(demoConciliacionesPago)
+export const obtenerConciliacionesPago = async () => {
+  const response = await getPagos()
+  return {
+    data: obtenerListaRespuesta(response.data).map(normalizarConciliacionDesdePago),
+  }
+}
 export const actualizarConciliacionPago = (id, datos) => {
-  demoConciliacionesPago = demoConciliacionesPago.map(item =>
-    Number(item.id) === Number(id)
-      ? { ...item, ...datos, actualizado_en: new Date().toISOString() }
-      : item
-  )
-  return respuestaDemo({ id, ...datos })
+  // DEMO: /payments/mis-pagos/ lista pagos reales, pero no persiste conciliaciones.
+  return respuestaDemo({ id, ...datos, actualizado_en: new Date().toISOString() })
 }
 
 // --- DTE simulado ---

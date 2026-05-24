@@ -44,19 +44,49 @@ function getEstado(estado) {
   return ESTADOS[estado] || { label: estado || 'Sin estado', clase: 'badge-secondary' }
 }
 
+function extraerMensajeErrorBackend(data) {
+  if (!data) return ''
+  if (typeof data === 'string') return data
+
+  const clavesPrioritarias = ['detail', 'error', 'message', 'stock', 'errores']
+  for (const clave of clavesPrioritarias) {
+    const valor = data[clave]
+    if (typeof valor === 'string' && valor.trim()) return valor
+    if (Array.isArray(valor)) {
+      const mensaje = valor.find((item) => typeof item === 'string' && item.trim())
+      if (mensaje) return mensaje
+    }
+    if (valor && typeof valor === 'object') {
+      const mensaje = extraerMensajeErrorBackend(valor)
+      if (mensaje) return mensaje
+    }
+  }
+
+  for (const valor of Object.values(data)) {
+    const mensaje = extraerMensajeErrorBackend(valor)
+    if (mensaje) return mensaje
+  }
+
+  return ''
+}
+
 export default function AprobacionesB2BPage() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [aprobaciones, setAprobaciones] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [exito, setExito] = useState('')
   const [accionandoId, setAccionandoId] = useState(null)
 
   const autorizado = ROLES_PERMITIDOS.includes(usuario?.rol)
 
-  const cargarDatos = async () => {
+  const cargarDatos = async ({ limpiarMensajes = true } = {}) => {
     setLoading(true)
-    setError('')
+    if (limpiarMensajes) {
+      setError('')
+      setExito('')
+    }
     try {
       const { data } = await obtenerAprobacionesB2B()
       setAprobaciones(obtenerLista(data))
@@ -74,11 +104,27 @@ export default function AprobacionesB2BPage() {
   const ejecutarAccion = async (id, accion) => {
     setAccionandoId(id)
     setError('')
+    setExito('')
     try {
-      await accion(id)
-      await cargarDatos()
+      const respuesta = await accion(id)
+      if (respuesta?.demo) {
+        setAprobaciones((items) =>
+          items.map((item) => Number(item.id) === Number(id)
+            ? { ...item, ...respuesta.data, comentario: 'Observacion demo local; no persistida en backend.' }
+            : item
+          )
+        )
+        setExito('Observacion demo registrada localmente.')
+      } else {
+        setExito('Acción completada correctamente.')
+        await cargarDatos({ limpiarMensajes: false })
+      }
     } catch (e) {
-      setError(e.response?.data?.error || e.response?.data?.detail || 'No se pudo actualizar la aprobación.')
+      const mensajeBackend = extraerMensajeErrorBackend(e.response?.data)
+      setError(mensajeBackend || 'No fue posible completar la acción porque el pedido no cumple una regla de negocio.')
+      if (e.response?.status === 409) {
+        await cargarDatos({ limpiarMensajes: false })
+      }
     } finally {
       setAccionandoId(null)
     }
@@ -107,9 +153,9 @@ export default function AprobacionesB2BPage() {
       <div className="aprobaciones-header">
         <div>
           <p className="aprobaciones-kicker">Revisión comercial</p>
-          <h1 className="page-title">Aprobaciones B2B <span className="demo-chip">Demo</span></h1>
+          <h1 className="page-title">Aprobaciones B2B <span className="demo-chip">Backend real</span></h1>
           <p className="text-muted">
-            Vista demo para defender el flujo de revisión comercial de pedidos institucionales.
+            Bandeja construida desde pedidos reales; aprobar y rechazar usan el endpoint de aprobacion del backend.
           </p>
         </div>
         <div className="aprobaciones-toolbar">
@@ -123,6 +169,7 @@ export default function AprobacionesB2BPage() {
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
+      {exito && <div className="alert alert-success">{exito}</div>}
 
       {loading ? (
         <div className="spinner" />
@@ -153,6 +200,7 @@ export default function AprobacionesB2BPage() {
               <tbody>
                 {aprobaciones.map(aprobacion => {
                   const estado = getEstado(aprobacion.estado_aprobacion)
+                  const pendiente = aprobacion.estado_aprobacion === 'pendiente'
                   const bloqueado = accionandoId === aprobacion.id
                   return (
                     <tr key={aprobacion.id}>
@@ -175,27 +223,33 @@ export default function AprobacionesB2BPage() {
                       <td>{aprobacion.comentario || '-'}</td>
                       <td>
                         <div className="aprobaciones-acciones">
-                          <button
-                            className="btn btn-success btn-sm"
-                            disabled={bloqueado}
-                            onClick={() => ejecutarAccion(aprobacion.id, aprobarRevisionB2B)}
-                          >
-                            Aprobar
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            disabled={bloqueado}
-                            onClick={() => ejecutarAccion(aprobacion.id, rechazarRevisionB2B)}
-                          >
-                            Rechazar
-                          </button>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            disabled={bloqueado}
-                            onClick={() => ejecutarAccion(aprobacion.id, observarRevisionB2B)}
-                          >
-                            Observar
-                          </button>
+                          {pendiente ? (
+                            <>
+                              <button
+                                className="btn btn-success btn-sm"
+                                disabled={bloqueado}
+                                onClick={() => ejecutarAccion(aprobacion.id, aprobarRevisionB2B)}
+                              >
+                                Aprobar
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                disabled={bloqueado}
+                                onClick={() => ejecutarAccion(aprobacion.id, rechazarRevisionB2B)}
+                              >
+                                Rechazar
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                disabled={bloqueado}
+                                onClick={() => ejecutarAccion(aprobacion.id, observarRevisionB2B)}
+                              >
+                                Observar demo
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-muted">Sin acciones pendientes</span>
+                          )}
                         </div>
                       </td>
                     </tr>

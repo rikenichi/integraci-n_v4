@@ -1,16 +1,18 @@
 .site-footer {
   background:
-    radial-gradient(circle at 92% 12%, rgba(120, 224, 204, 0.18), transparent 24%),
+    radial-gradient(circle at 92% 12%, rgba(120, 224, 204, 0.2), transparent 25%),
+    radial-gradient(circle at 10% 90%, rgba(74, 144, 226, 0.16), transparent 28%),
     linear-gradient(135deg, #17324d 0%, #10263f 100%);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.78);
   display: grid;
-  gap: 1.25rem;
+  gap: 1.55rem;
   grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
-  margin: 2.8rem auto 0;
+  margin: 3.2rem auto 0;
   max-width: 1240px;
-  padding: 2.4rem 1.75rem 2.2rem;
-  box-shadow: 0 18px 42px rgba(15, 38, 63, 0.18);
+  padding: 2.8rem 2.1rem 2.6rem;
+  box-shadow: 0 22px 54px rgba(15, 38, 63, 0.22);
 }
 
 .site-footer > div {
@@ -20,7 +22,9 @@
 .site-footer strong {
   color: #ffffff;
   display: block;
-  margin-bottom: 0.45rem;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.55rem;
 }
 
 .site-footer p {
@@ -30,15 +34,17 @@
 }
 
 .site-footer a {
-  color: #78e0cc;
+  color: #8cebdc;
   display: block;
   font-weight: 800;
-  margin-top: 0.35rem;
+  margin-top: 0.42rem;
   text-decoration: none;
+  transition: color 0.18s ease, transform 0.18s ease;
 }
 
 .site-footer a:hover {
   color: #ffffff;
+  transform: translateX(2px);
 }
 
 @media (max-width: 1024px) {
@@ -46,6 +52,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-left: 1.25rem;
     margin-right: 1.25rem;
+    padding: 2.35rem 1.75rem;
   }
 }
 
@@ -54,7 +61,6 @@
     grid-template-columns: 1fr;
     margin-left: 0.85rem;
     margin-right: 0.85rem;
-    padding-left: 0.85rem;
-    padding-right: 0.85rem;
+    padding: 2rem 1.15rem;
   }
 }

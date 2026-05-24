@@ -73,8 +73,22 @@ export default function ConciliacionPagosPage() {
     setActualizandoId(id)
     setError('')
     try {
-      await actualizarConciliacionPago(id, { estado_conciliacion })
-      await cargarDatos()
+      const respuesta = await actualizarConciliacionPago(id, { estado_conciliacion })
+      if (respuesta?.demo) {
+        setConciliaciones((items) =>
+          items.map((item) => Number(item.id) === Number(id)
+            ? {
+              ...item,
+              estado_conciliacion,
+              actualizado_en: respuesta.data.actualizado_en,
+              observacion: 'Estado demo local; el pago real no fue modificado.',
+            }
+            : item
+          )
+        )
+      } else {
+        await cargarDatos()
+      }
     } catch (e) {
       setError(e.response?.data?.detail || 'No se pudo actualizar la conciliación.')
     } finally {
@@ -105,9 +119,9 @@ export default function ConciliacionPagosPage() {
       <div className="conciliacion-header">
         <div>
           <p className="conciliacion-kicker">Finanzas internas</p>
-          <h1 className="page-title">Conciliación de pagos <span className="demo-chip">No persistente</span></h1>
+          <h1 className="page-title">Conciliación de pagos <span className="demo-chip">Pagos reales</span></h1>
           <p className="text-muted">
-            Vista demo de conciliación; permite simular estados sin alterar pagos reales del backend.
+            Lista pagos reales desde backend; las marcas de conciliacion son locales porque no hay endpoint financiero persistente.
           </p>
         </div>
         <div className="conciliacion-toolbar">
@@ -131,7 +145,7 @@ export default function ConciliacionPagosPage() {
             <span>{conciliaciones.length} registros</span>
           </div>
           {conciliaciones.length === 0 ? (
-            <p className="text-muted conciliacion-empty">No hay conciliaciones registradas.</p>
+            <p className="text-muted conciliacion-empty">No hay pagos reales disponibles para revisar.</p>
           ) : (
             <table className="data-table">
               <thead>

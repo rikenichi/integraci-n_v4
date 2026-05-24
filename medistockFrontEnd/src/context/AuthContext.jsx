@@ -29,6 +29,53 @@ function contieneAlguno(valores, terminos) {
   })
 }
 
+function decodificarJwt(token) {
+  try {
+    const payload = token?.split('.')[1]
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const json = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+        .join('')
+    )
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+function perfilDesdeToken(accessToken) {
+  const claims = decodificarJwt(accessToken) || {}
+  const nombreCompleto = String(claims.full_name || '').trim()
+  const [firstName = '', ...apellidos] = nombreCompleto.split(' ').filter(Boolean)
+  const grupos = claims.grupos || []
+
+  let rolBackend = 'TOKEN'
+  if (contieneAlguno(grupos, ['administrador', 'admin'])) rolBackend = 'ADMINISTRADOR'
+  else if (contieneAlguno(grupos, ['ejecutivo', 'ventas'])) rolBackend = 'EJECUTIVO'
+  else if (contieneAlguno(grupos, ['operador', 'logistica'])) rolBackend = 'OPERADOR'
+  else if (contieneAlguno(grupos, ['analista', 'finanzas'])) rolBackend = 'ANALISTA'
+
+  return {
+    rol: normalizarTexto(rolBackend),
+    rol_backend: rolBackend,
+    datos: {
+      usuario: {
+        id: claims.user_id || null,
+        username: claims.username || '',
+        email: claims.email || '',
+        first_name: firstName,
+        last_name: apellidos.join(' '),
+        grupos,
+        is_staff: false,
+      },
+    },
+  }
+}
+
 function resolverRolFrontend(perfil) {
   const rolBackend = String(perfil?.rol || perfil?.Rol || '').toUpperCase()
   const datos = perfil?.datos || {}
@@ -120,7 +167,13 @@ export function AuthProvider({ children }) {
     const { data } = await apiLogin(username, password)
     localStorage.setItem('access_token', data.access)
     localStorage.setItem('refresh_token', data.refresh)
-    const perfil = await getPerfil()
+    let perfil
+    try {
+      perfil = await getPerfil()
+    } catch (error) {
+      if (error.response?.status !== 404) throw error
+      perfil = perfilDesdeToken(data.access)
+    }
     const usuarioPerfil = normalizarPerfil(perfil)
     localStorage.setItem('usuario', JSON.stringify(usuarioPerfil))
     setUsuario(usuarioPerfil)
