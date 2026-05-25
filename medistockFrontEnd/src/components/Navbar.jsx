@@ -88,7 +88,7 @@ export default function Navbar() {
         <Link to="/catalogo?search=medicamentos">Medicamentos</Link>
         <Link to="/catalogo?search=insumos">Insumos médicos</Link>
         <Link to="/catalogo?search=bienestar">Bienestar</Link>
-        <Link to="/#contacto">Contacto</Link>
+        <Link to="/contacto">Contacto</Link>
         {usuario && <Link to="/panel">Mi Panel</Link>}
         {usuario && <Link to="/perfil">Mi Perfil</Link>}
       </nav>

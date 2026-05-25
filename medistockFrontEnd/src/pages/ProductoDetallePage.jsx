@@ -43,6 +43,7 @@ export default function ProductoDetallePage() {
   }
 
   const handleAgregar = () => {
+    if (sinStock) return
     agregarItem(producto, cantidad)
     setAgregado(true)
     setTimeout(() => setAgregado(false), 2000)
@@ -53,6 +54,8 @@ export default function ProductoDetallePage() {
   if (!producto) return null
 
   const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
+  const stockDisponible = Number(producto.stock_disponible ?? producto.stock ?? 0)
+  const sinStock = stockDisponible <= 0
 
   return (
     <div className="page-container">
@@ -85,13 +88,27 @@ export default function ProductoDetallePage() {
               Unidad: {producto.unidad_medida}
             </p>
 
+            <p style={{fontSize:'0.85rem', marginTop:4}}>
+              Stock disponible:{' '}
+              <span className={`badge ${sinStock ? 'badge-danger' : stockDisponible <= 10 ? 'badge-warning' : 'badge-success'}`}>
+                {sinStock ? 'Sin stock' : `${stockDisponible} unidades`}
+              </span>
+            </p>
+
             <hr className="divider" />
+
+            {sinStock && (
+              <div className="alert alert-error" style={{marginBottom:12}}>
+                Este producto está agotado y no puede agregarse al carrito.
+              </div>
+            )}
 
             <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:16}}>
               <label style={{fontWeight:500}}>Cantidad:</label>
               <input
-                type="number" min={1} value={cantidad}
+                type="number" min={1} max={sinStock ? 1 : stockDisponible} value={cantidad}
                 onChange={e => setCantidad(parseInt(e.target.value) || 1)}
+                disabled={sinStock}
                 style={{width:80, padding:'8px', border:'1px solid var(--color-border)', borderRadius:'var(--radius)'}}
               />
             </div>
@@ -100,8 +117,10 @@ export default function ProductoDetallePage() {
               <button
                 className={`btn btn-primary btn-lg ${agregado ? 'btn-success' : ''}`}
                 onClick={handleAgregar}
+                disabled={sinStock}
+                title={sinStock ? 'Producto sin stock' : ''}
               >
-                {agregado ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
+                {sinStock ? '✕ Sin stock' : agregado ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
               </button>
               <button className="btn btn-secondary" onClick={verStock} disabled={loadingStock}>
                 {loadingStock ? 'Consultando...' : '📦 Ver stock por sucursal'}

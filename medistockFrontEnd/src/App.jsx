@@ -25,6 +25,7 @@ import ConveniosInstitucionalesPage from './pages/ConveniosInstitucionalesPage'
 import GuiasDespachoPage from './pages/GuiasDespachoPage'
 import AprobacionesB2BPage from './pages/AprobacionesB2BPage'
 import DashboardAnalistaPage from './pages/DashboardAnalistaPage'
+import ContactoPage from './pages/ContactoPage'
 
 function RutaProtegida({ children }) {
   const { usuario, cargando } = useAuth()
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registro" element={<RegistroPage />} />
             <Route path="/" element={<HomePage />} />
+            <Route path="/contacto" element={<ContactoPage />} />
             <Route path="/catalogo" element={<CatalogoPage />} />
             <Route path="/producto/:codigo" element={<ProductoDetallePage />} />
             <Route path="/carrito" element={<RutaProtegida><CarritoPage /></RutaProtegida>} />
