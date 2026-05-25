@@ -1,0 +1,24 @@
+{
+  "name": "farmacia-cruz-amarilla",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Portal B2B de Farmacia Cruz Amarilla — cliente externo del API de MEDISTOCK",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.1"
+  }
+}

@@ -1,0 +1,61 @@
+.login-page {
+  padding: 56px 0;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(245, 184, 0, 0.18), transparent 35%),
+    var(--ca-bg);
+  min-height: calc(100vh - 200px);
+}
+.login-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+.login-info h1 {
+  font-size: 2.2rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 12px 0 14px;
+}
+.login-info p {
+  color: var(--ca-ink-soft);
+  font-size: 1rem;
+  max-width: 500px;
+}
+.login-benefits {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 22px 0;
+  font-size: 0.92rem;
+}
+.login-note {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--ca-border);
+  border-radius: var(--ca-radius);
+  font-size: 0.88rem;
+}
+.login-note strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.login-form {
+  max-width: 420px;
+  padding: 32px;
+}
+.login-form h2 {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 880px) {
+  .login-grid {
+    grid-template-columns: 1fr;
+  }
+  .login-form {
+    max-width: 100%;
+  }
+}

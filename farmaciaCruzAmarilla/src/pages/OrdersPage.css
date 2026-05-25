@@ -1,0 +1,55 @@
+.orders-list {
+  display: grid;
+  gap: 14px;
+}
+
+.order-card {
+  padding: 18px 20px;
+}
+.order-card-head {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+.order-card-head > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.order-card-head small {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.order-card-head strong {
+  font-size: 0.95rem;
+}
+.order-card-estado {
+  justify-self: flex-end;
+}
+
+.order-detalles {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--ca-border);
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+  list-style: none;
+}
+.order-detalles li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 880px) {
+  .order-card-head {
+    grid-template-columns: 1fr 1fr;
+  }
+  .order-card-estado {
+    grid-column: 1 / -1;
+    justify-self: flex-start;
+  }
+}

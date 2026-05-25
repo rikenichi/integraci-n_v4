@@ -1,0 +1,20 @@
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--ca-surface);
+  border: 1px dashed var(--ca-border-strong);
+  border-radius: var(--ca-radius-lg);
+}
+.empty-icon {
+  font-size: 3rem;
+  color: var(--ca-primary);
+  margin-bottom: 12px;
+  line-height: 1;
+}
+.empty-state h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+.empty-action {
+  margin-top: 18px;
+}

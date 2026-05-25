@@ -1,0 +1,124 @@
+.header {
+  background: #fff;
+  border-bottom: 1px solid var(--ca-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-top {
+  background: var(--ca-ink);
+  color: #fff;
+  font-size: 0.78rem;
+}
+.header-top-inner {
+  display: flex;
+  gap: 24px;
+  padding: 8px 24px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.header-top-inner span {
+  opacity: 0.92;
+}
+
+.header-main-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 24px;
+  flex-wrap: wrap;
+}
+
+.header-brand {
+  display: inline-flex;
+  align-items: center;
+}
+
+.header-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+.header-nav a {
+  padding: 8px 14px;
+  color: var(--ca-ink-soft);
+  border-radius: var(--ca-radius);
+  font-weight: 500;
+  font-size: 0.92rem;
+  transition: background 0.18s, color 0.18s;
+}
+.header-nav a:hover {
+  background: var(--ca-primary-soft);
+  color: var(--ca-ink);
+}
+.header-nav a.active {
+  background: var(--ca-primary-soft);
+  color: var(--ca-primary-dark);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  text-align: right;
+  max-width: 200px;
+}
+.header-user-info strong {
+  font-size: 0.88rem;
+}
+.header-user-info small {
+  color: var(--ca-ink-muted);
+  font-size: 0.75rem;
+}
+
+.header-cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--ca-primary);
+  color: var(--ca-ink);
+  border-radius: var(--ca-radius);
+  font-weight: 600;
+  font-size: 0.88rem;
+  position: relative;
+  transition: background 0.18s, transform 0.15s;
+}
+.header-cart:hover {
+  background: var(--ca-primary-dark);
+  color: var(--ca-ink);
+  transform: translateY(-1px);
+}
+.header-cart-count {
+  background: var(--ca-ink);
+  color: var(--ca-primary);
+}
+
+@media (max-width: 880px) {
+  .header-main-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .header-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .header-user-info {
+    align-items: flex-start;
+  }
+}
