@@ -19,12 +19,14 @@ const ETIQUETAS_ROL = {
 }
 
 function camposIniciales(datos, rol) {
-  // Soporta dos formatos:
-  //   - Cliente (backend actual): { id, rut, telefono, email, first_name, last_name, institucion, direccion_principal, ... }
-  //   - Cliente (legacy): { usuario: {...}, rut, telefono, tipo_cliente, institucion_nombre }
-  //   - Trabajador: { id, username, email, first_name, last_name, rol, rut, telefono, ... }
+  // Soporta tres formatos:
+  //   - Cliente actual: { id, rut, telefono, email, first_name, last_name, institucion, direccion_principal, ... }
+  //   - Cliente legacy: { usuario: {...}, rut, telefono, tipo_cliente, institucion_nombre }
+  //   - Trabajador:     { id, usuario: { username, email, first_name, last_name, rut }, rut, telefono, direccion, cargo, ... }
   const esCliente = ROLES_CLIENTE.includes(rol) || rol === 'CLIENTE'
-  const base = esCliente ? (datos?.usuario || datos || {}) : (datos || {})
+  // El subobjeto "usuario" tiene first_name/last_name/email/rut. Para trabajador siempre viene anidado.
+  // Para cliente puede venir anidado o plano.
+  const usuario = datos?.usuario || (esCliente ? datos : {}) || {}
   const dir = datos?.direccion_principal
   const direccionPrincipal = dir
     ? [dir.direccion, dir.num_direccion, dir.detalle_direccion, dir.comuna]
@@ -32,12 +34,12 @@ function camposIniciales(datos, rol) {
       .join(' ')
     : ''
   return {
-    first_name: base.first_name || '',
-    last_name: base.last_name || '',
-    email: base.email || '',
-    rut: (esCliente ? datos?.rut : datos?.rut) || base.rut || '',
-    telefono: (esCliente ? datos?.telefono : datos?.telefono) || base.telefono || '',
-    direccion: base.direccion || datos?.direccion || dir?.direccion || direccionPrincipal || '',
+    first_name: usuario.first_name || datos?.first_name || '',
+    last_name: usuario.last_name || datos?.last_name || '',
+    email: usuario.email || datos?.email || '',
+    rut: datos?.rut || usuario.rut || '',
+    telefono: datos?.telefono || usuario.telefono || '',
+    direccion: datos?.direccion || dir?.direccion || direccionPrincipal || '',
     num_direccion: dir?.num_direccion || '',
     detalle_direccion: dir?.detalle_direccion || '',
     regionId: dir?.region?.id || dir?.region_id || '',

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { obtenerProductoCompatible, obtenerStockProductoCompatible } from '../services/api'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import './ProductoDetallePage.css'
 
 function formatPrecio(n) {
@@ -42,17 +43,23 @@ export default function ProductoDetallePage() {
       .finally(() => setLoadingStock(false))
   }
 
-  const handleAgregar = () => {
-    agregarItem(producto, cantidad)
-    setAgregado(true)
-    setTimeout(() => setAgregado(false), 2000)
-  }
-
   if (loading) return <div className="spinner" />
   if (error) return <div className="page-container"><div className="alert alert-error">{error}</div></div>
   if (!producto) return null
 
   const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
+  const stockDisponible = Number(producto.stock_disponible ?? producto.stock ?? 0)
+  const sinStock = stockDisponible <= 0
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const bloqueado = sinStock || !usuarioPuedeComprar
+
+  const handleAgregar = () => {
+    if (bloqueado) return
+    agregarItem(producto, cantidad)
+    setAgregado(true)
+    setTimeout(() => setAgregado(false), 2000)
+  }
 
   return (
     <div className="page-container">
@@ -69,8 +76,21 @@ export default function ProductoDetallePage() {
             <p className="text-muted" style={{fontSize:'0.8rem'}}>{producto.codigo}</p>
             <h1 style={{fontSize:'1.5rem', fontWeight:700, margin:'8px 0'}}>{producto.nombre}</h1>
 
+            {producto.tipo_producto && (
+              <span className="badge badge-info" style={{marginRight:6, marginBottom:8}}>
+                {producto.tipo_producto}
+              </span>
+            )}
+            {producto.dosis && (
+              <span className="badge badge-secondary" style={{marginBottom:8}}>
+                Presentación {producto.dosis}
+              </span>
+            )}
+
             {producto.requiere_receta && (
-              <span className="badge badge-warning" style={{marginBottom:12}}>Requiere receta médica</span>
+              <span className="badge badge-warning" style={{display:'block', marginBottom:12}}>
+                Requiere receta médica
+              </span>
             )}
 
             <p style={{color:'var(--color-text-muted)', marginBottom:16}}>{producto.descripcion}</p>
@@ -85,13 +105,33 @@ export default function ProductoDetallePage() {
               Unidad: {producto.unidad_medida}
             </p>
 
+            <p style={{fontSize:'0.85rem', marginTop:4}}>
+              Stock disponible:{' '}
+              <span className={`badge ${sinStock ? 'badge-danger' : stockDisponible <= 10 ? 'badge-warning' : 'badge-success'}`}>
+                {sinStock ? 'Sin stock' : `${stockDisponible} unidades`}
+              </span>
+            </p>
+
             <hr className="divider" />
+
+            {sinStock && (
+              <div className="alert alert-error" style={{marginBottom:12}}>
+                Este producto está agotado y no puede agregarse al carrito.
+              </div>
+            )}
+
+            {!usuarioPuedeComprar && !sinStock && (
+              <div className="alert alert-info" style={{marginBottom:12}}>
+                {mensajeNoCompra}
+              </div>
+            )}
 
             <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:16}}>
               <label style={{fontWeight:500}}>Cantidad:</label>
               <input
-                type="number" min={1} value={cantidad}
+                type="number" min={1} max={sinStock ? 1 : stockDisponible} value={cantidad}
                 onChange={e => setCantidad(parseInt(e.target.value) || 1)}
+                disabled={sinStock}
                 style={{width:80, padding:'8px', border:'1px solid var(--color-border)', borderRadius:'var(--radius)'}}
               />
             </div>
@@ -100,8 +140,22 @@ export default function ProductoDetallePage() {
               <button
                 className={`btn btn-primary btn-lg ${agregado ? 'btn-success' : ''}`}
                 onClick={handleAgregar}
+                disabled={bloqueado}
+                title={
+                  sinStock
+                    ? 'Producto sin stock'
+                    : !usuarioPuedeComprar
+                      ? mensajeNoCompra
+                      : ''
+                }
               >
-                {agregado ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
+                {sinStock
+                  ? '✕ Sin stock'
+                  : !usuarioPuedeComprar
+                    ? '🔒 No disponible para tu rol'
+                    : agregado
+                      ? '✓ Agregado al carrito'
+                      : '🛒 Agregar al carrito'}
               </button>
               <button className="btn btn-secondary" onClick={verStock} disabled={loadingStock}>
                 {loadingStock ? 'Consultando...' : '📦 Ver stock por sucursal'}

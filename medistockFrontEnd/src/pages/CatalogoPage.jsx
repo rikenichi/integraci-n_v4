@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getCategorias, obtenerProductosCompatibles } from '../services/api'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
+import { filtrarPorGrupo, obtenerGrupo } from '../utils/gruposCatalogo'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import './CatalogoPage.css'
 
 function formatPrecio(n) {
@@ -42,10 +44,14 @@ export default function CatalogoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [bannerActivo, setBannerActivo] = useState(0)
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const grupoActivoId = searchParams.get('grupo')
+  const grupoActivo = obtenerGrupo(grupoActivoId)
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
   const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -61,6 +67,18 @@ export default function CatalogoPage() {
   useEffect(() => {
     setFiltros(f => ({ ...f, search: searchParams.get('search') || '' }))
   }, [searchParams])
+
+  // Productos filtrados localmente por grupo del navbar (si aplica).
+  const productosVisibles = useMemo(() => {
+    if (!grupoActivoId) return productos
+    return filtrarPorGrupo(productos, grupoActivoId)
+  }, [productos, grupoActivoId])
+
+  const limpiarGrupo = () => {
+    const params = new URLSearchParams(searchParams)
+    params.delete('grupo')
+    setSearchParams(params, { replace: true })
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -90,7 +108,7 @@ export default function CatalogoPage() {
           </div>
         </div>
         <div className="catalogo-hero-metrics">
-          <div><strong>{productos.length}</strong><span>productos visibles</span></div>
+          <div><strong>{productosVisibles.length}</strong><span>productos visibles</span></div>
           <div><strong>{categorias.length}</strong><span>categorias</span></div>
           <div><strong>{esB2B ? 'B2B' : 'B2C'}</strong><span>perfil de precio</span></div>
         </div>
@@ -108,9 +126,32 @@ export default function CatalogoPage() {
       </section>
 
       <div className="catalogo-header">
-        <h1 className="page-title">Catálogo de Productos</h1>
+        <h1 className="page-title">
+          {grupoActivo ? (
+            <>
+              <span style={{ marginRight: 8 }}>{grupoActivo.icono}</span>
+              {grupoActivo.label}
+            </>
+          ) : (
+            'Catálogo de Productos'
+          )}
+        </h1>
         {esB2B && <span className="badge badge-info">Precios B2B institucional</span>}
       </div>
+
+      {grupoActivo && (
+        <div className="grupo-chip card">
+          <div>
+            <strong>{grupoActivo.label}</strong>
+            <p className="text-muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+              {grupoActivo.descripcion} · {productosVisibles.length} producto{productosVisibles.length === 1 ? '' : 's'} encontrado{productosVisibles.length === 1 ? '' : 's'}.
+            </p>
+          </div>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={limpiarGrupo}>
+            ✕ Ver todo el catálogo
+          </button>
+        </div>
+      )}
 
       <div className="filtros card">
         <input
@@ -133,11 +174,15 @@ export default function CatalogoPage() {
 
       {loading ? (
         <div className="spinner" />
-      ) : productos.length === 0 ? (
-        <div className="text-center text-muted mt-3">No se encontraron productos.</div>
+      ) : productosVisibles.length === 0 ? (
+        <div className="text-center text-muted mt-3">
+          {grupoActivo
+            ? `No hay productos en ${grupoActivo.label} con los filtros actuales.`
+            : 'No se encontraron productos.'}
+        </div>
       ) : (
         <div className="grid-4">
-          {productos.map(p => (
+          {productosVisibles.map(p => (
             <div key={p.id} className="producto-card card">
               {(() => {
                 const stockBadge = getStockBadge(p)
@@ -156,7 +201,14 @@ export default function CatalogoPage() {
               <div className="producto-body">
                 <span className="producto-codigo text-muted">{p.codigo}</span>
                 <h3 className="producto-nombre">{p.nombre}</h3>
-                <p className="producto-categoria text-muted">{p.categoria_nombre}</p>
+                <p className="producto-categoria text-muted">
+                  {p.tipo_producto || p.categoria_nombre}
+                </p>
+                {p.detalle_uso && (
+                  <p className="producto-descripcion text-muted" style={{fontSize:'0.78rem', marginTop:4, lineHeight:1.35}}>
+                    {p.detalle_uso}
+                  </p>
+                )}
                 <div className="producto-precio">
                   {formatPrecio(esB2B ? p.precio_b2b : p.precio_b2c)}
                   {esB2B && (
@@ -176,7 +228,8 @@ export default function CatalogoPage() {
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => agregarItem(p)}
-                  disabled={Number(p.stock_disponible || 0) <= 0}
+                  disabled={Number(p.stock_disponible || 0) <= 0 || !usuarioPuedeComprar}
+                  title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
                 >
                   Agregar
                 </button>

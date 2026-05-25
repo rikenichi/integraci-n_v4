@@ -1,0 +1,70 @@
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.catalog-filters {
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chip {
+  background: #f9f5e7;
+  border: 1px solid var(--ca-border);
+  color: var(--ca-ink-soft);
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover {
+  background: var(--ca-primary-soft);
+  border-color: var(--ca-primary);
+}
+.chip-active {
+  background: var(--ca-primary);
+  color: var(--ca-ink);
+  border-color: var(--ca-primary);
+  font-weight: 600;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--ca-ink-soft);
+  margin: 8px 0;
+  cursor: pointer;
+}
+.checkbox input {
+  accent-color: var(--ca-primary);
+  width: 16px;
+  height: 16px;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 880px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+  }
+  .catalog-filters {
+    position: static;
+  }
+}

@@ -1,28 +1,34 @@
 import { useNavigate } from 'react-router-dom'
-import { useCarrito } from '../context/CarritoContext'
+import { COSTO_DESPACHO_DOMICILIO, useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import './CarritoPage.css'
 
 function formatPrecio(n) {
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n)
+  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 }
 
 export default function CarritoPage() {
-  const { items, quitarItem, actualizarCantidad, vaciarCarrito, calcularTotal } = useCarrito()
+  const {
+    items,
+    quitarItem,
+    actualizarCantidad,
+    vaciarCarrito,
+    calcularResumen,
+    tipoDespacho,
+    setTipoDespacho,
+  } = useCarrito()
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
 
-  const subtotal = calcularTotal(esB2B)
-  const descuento = esB2B ? subtotal * 0.10 : 0
-  const total = subtotal - descuento
+  const { subtotal, descuento, neto, iva, despacho, total } = calcularResumen({ esB2B, tipoDespacho })
 
   if (items.length === 0) {
     return (
       <div className="page-container text-center">
-        <div style={{padding: '60px 0'}}>
-          <div style={{fontSize:'4rem'}}>🛒</div>
-          <h2 style={{marginTop:16, marginBottom:8}}>Tu carrito está vacío</h2>
+        <div style={{ padding: '60px 0' }}>
+          <div style={{ fontSize: '4rem' }}>🛒</div>
+          <h2 style={{ marginTop: 16, marginBottom: 8 }}>Tu carrito está vacío</h2>
           <p className="text-muted">Agrega productos desde el catálogo.</p>
           <button className="btn btn-primary mt-2" onClick={() => navigate('/catalogo')}>
             Ir al catálogo
@@ -48,21 +54,27 @@ export default function CarritoPage() {
                 <div className="item-icon">🏥</div>
                 <div className="item-info">
                   <p className="item-nombre">{producto.nombre}</p>
-                  <p className="text-muted" style={{fontSize:'0.8rem'}}>{producto.codigo}</p>
+                  <p className="text-muted" style={{ fontSize: '0.8rem' }}>{producto.codigo}</p>
                   <p className="item-precio">{formatPrecio(precio)} / {producto.unidad_medida}</p>
                 </div>
                 <div className="item-cantidad">
-                  <button className="btn btn-secondary btn-sm"
-                    onClick={() => actualizarCantidad(producto.id, cantidad - 1)}>−</button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => actualizarCantidad(producto.id, cantidad - 1)}
+                  >−</button>
                   <span>{cantidad}</span>
-                  <button className="btn btn-secondary btn-sm"
-                    onClick={() => actualizarCantidad(producto.id, cantidad + 1)}>+</button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => actualizarCantidad(producto.id, cantidad + 1)}
+                  >+</button>
                 </div>
                 <div className="item-subtotal">
                   {formatPrecio(parseFloat(precio) * cantidad)}
                 </div>
-                <button className="btn btn-danger btn-sm"
-                  onClick={() => quitarItem(producto.id)}>✕</button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => quitarItem(producto.id)}
+                >✕</button>
               </div>
             )
           })}
@@ -70,26 +82,85 @@ export default function CarritoPage() {
 
         <div className="carrito-resumen card">
           <h3 className="section-title">Resumen del pedido</h3>
+
+          <div className="resumen-despacho">
+            <p className="resumen-label">Tipo de despacho</p>
+            <div className="resumen-despacho-opciones">
+              <label className={`resumen-radio ${tipoDespacho === 'domicilio' ? 'resumen-radio-activo' : ''}`}>
+                <input
+                  type="radio"
+                  name="tipoDespacho"
+                  value="domicilio"
+                  checked={tipoDespacho === 'domicilio'}
+                  onChange={(e) => setTipoDespacho(e.target.value)}
+                />
+                <div>
+                  <strong>🚚 A domicilio</strong>
+                  <small>{formatPrecio(COSTO_DESPACHO_DOMICILIO)} extra</small>
+                </div>
+              </label>
+              <label className={`resumen-radio ${tipoDespacho === 'retiro' ? 'resumen-radio-activo' : ''}`}>
+                <input
+                  type="radio"
+                  name="tipoDespacho"
+                  value="retiro"
+                  checked={tipoDespacho === 'retiro'}
+                  onChange={(e) => setTipoDespacho(e.target.value)}
+                />
+                <div>
+                  <strong>🏪 Retiro en sucursal</strong>
+                  <small>Sin costo extra</small>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <hr className="divider" />
+
           <div className="resumen-linea">
             <span>Subtotal ({items.length} producto{items.length > 1 ? 's' : ''})</span>
             <span>{formatPrecio(subtotal)}</span>
           </div>
+
           {esB2B && (
             <div className="resumen-linea resumen-descuento">
               <span>Descuento institucional (10%)</span>
               <span>− {formatPrecio(descuento)}</span>
             </div>
           )}
+
+          <div className="resumen-linea">
+            <span>Costo de despacho</span>
+            <span>{despacho > 0 ? formatPrecio(despacho) : 'Gratis'}</span>
+          </div>
+
           <hr className="divider" />
+
           <div className="resumen-total">
-            <span>Total</span>
+            <span>Total a pagar</span>
             <span>{formatPrecio(total)}</span>
           </div>
+
+          <div className="resumen-iva-detalle">
+            <div className="resumen-linea resumen-linea-mini">
+              <span>Neto (sin IVA)</span>
+              <span>{formatPrecio(neto)}</span>
+            </div>
+            <div className="resumen-linea resumen-linea-mini">
+              <span>IVA (19%) incluido</span>
+              <span>{formatPrecio(iva)}</span>
+            </div>
+            <p className="text-muted resumen-iva-nota">
+              Los precios mostrados ya incluyen IVA. El despacho no agrega IVA adicional.
+            </p>
+          </div>
+
           {esB2B && (
-            <p className="text-muted mt-1" style={{fontSize:'0.8rem'}}>
+            <p className="text-muted mt-1" style={{ fontSize: '0.8rem' }}>
               Precio B2B institucional con descuento aplicado al facturar.
             </p>
           )}
+
           <button
             className="btn btn-primary btn-block btn-lg mt-2"
             onClick={() => navigate('/confirmar-pedido')}
