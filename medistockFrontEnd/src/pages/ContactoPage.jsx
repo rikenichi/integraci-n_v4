@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import './ContactoPage.css'
 
 const MOTIVOS = [
@@ -17,18 +16,20 @@ function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
-export default function ContactoPage() {
-  const { usuario } = useAuth()
+// Estado inicial del formulario en blanco. Los datos personales viven en Mi Perfil,
+// no se autocompletan acá para evitar confusión con la info personal del usuario.
+const FORM_VACIO = {
+  nombre: '',
+  apellido: '',
+  email: '',
+  telefono: '',
+  motivo: 'consulta',
+  mensaje: '',
+  aceptaPolitica: false,
+}
 
-  const [form, setForm] = useState({
-    nombre: usuario?.first_name || '',
-    apellido: usuario?.last_name || '',
-    email: usuario?.email || '',
-    telefono: usuario?.telefono || '',
-    motivo: 'consulta',
-    mensaje: '',
-    aceptaPolitica: false,
-  })
+export default function ContactoPage() {
+  const [form, setForm] = useState(FORM_VACIO)
   const [errores, setErrores] = useState({})
   const [enviando, setEnviando] = useState(false)
   const [exito, setExito] = useState(false)
@@ -96,15 +97,7 @@ export default function ContactoPage() {
     setTimeout(() => {
       setEnviando(false)
       setExito(true)
-      setForm({
-        nombre: usuario?.first_name || '',
-        apellido: usuario?.last_name || '',
-        email: usuario?.email || '',
-        telefono: usuario?.telefono || '',
-        motivo: 'consulta',
-        mensaje: '',
-        aceptaPolitica: false,
-      })
+      setForm(FORM_VACIO)
     }, 700)
   }
 
