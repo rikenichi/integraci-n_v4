@@ -5,6 +5,7 @@ from .models import (
     Lote, Inventario, MovimientoInventario,
     TrasladoInventario, DetalleTrasladoInventario
 )
+from apps.locations.models import Sucursal
 
 
 # ============================================================
@@ -344,3 +345,154 @@ class ProductoCatalogoSerializer(serializers.ModelSerializer):
             .order_by('sucursal__nombre')
         )
         return ProductoStockSucursalSerializer(stock_qs, many=True).data
+
+
+class IngresoProductoSerializer(serializers.Serializer):
+    """
+    Crea o recupera un producto, asocia categorias, crea lote,
+    actualiza inventario y registra un movimiento de entrada.
+    """
+
+    sku = serializers.CharField(max_length=80)
+    nombre = serializers.CharField(max_length=180)
+    descripcion = serializers.CharField(max_length=500, required=False, allow_blank=True, default='')
+    valor_unitario = serializers.IntegerField(min_value=0)
+    marca_id = serializers.PrimaryKeyRelatedField(
+        queryset=Marca.objects.all(),
+        source='marca',
+        required=False,
+        allow_null=True,
+    )
+    unidad_medida = serializers.CharField(max_length=50, required=False, allow_blank=True, default='')
+    requiere_control_vencimiento = serializers.BooleanField(default=True)
+    registro_sanitario = serializers.CharField(
+        max_length=120,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+    es_caja = serializers.BooleanField(default=False)
+
+    largo_mm = serializers.IntegerField(min_value=0, required=False, default=0)
+    ancho_mm = serializers.IntegerField(min_value=0, required=False, default=0)
+    alto_mm = serializers.IntegerField(min_value=0, required=False, default=0)
+    peso_mg = serializers.IntegerField(min_value=0, required=False, default=0)
+    volumen_ml = serializers.IntegerField(min_value=0, required=False, default=0)
+
+    categoria_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Categoria.objects.all(),
+        many=True,
+        source='categorias',
+    )
+
+    codigo_lote = serializers.CharField(max_length=100)
+    fecha_elaboracion = serializers.DateField(required=False, allow_null=True)
+    fecha_vencimiento = serializers.DateField(required=False, allow_null=True)
+
+    sucursal_id = serializers.PrimaryKeyRelatedField(
+        queryset=Sucursal.objects.all(),
+        source='sucursal',
+    )
+    cantidad = serializers.IntegerField(min_value=1)
+    stock_critico = serializers.IntegerField(min_value=0, default=0)
+
+    motivo = serializers.CharField(max_length=255, required=False, allow_blank=True, default='Ingreso inicial')
+    observacion = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+
+    def validate_categoria_ids(self, categorias):
+        if not categorias:
+            raise serializers.ValidationError('Debe especificar al menos una categoria.')
+        return categorias
+
+    def validate(self, attrs):
+        fecha_elaboracion = attrs.get('fecha_elaboracion')
+        fecha_vencimiento = attrs.get('fecha_vencimiento')
+        if fecha_elaboracion and fecha_vencimiento and fecha_vencimiento <= fecha_elaboracion:
+            raise serializers.ValidationError({
+                'fecha_vencimiento': 'Debe ser posterior a la fecha de elaboracion.'
+            })
+        return attrs
+
+    def create(self, validated_data):
+        from django.db import transaction
+
+        usuario = self.context['request'].user
+        marca = validated_data.pop('marca', None)
+        categorias = validated_data.pop('categorias')
+        sucursal = validated_data.pop('sucursal')
+        cantidad = validated_data.pop('cantidad')
+        stock_critico = validated_data.pop('stock_critico', 0)
+        codigo_lote = validated_data.pop('codigo_lote')
+        fecha_elaboracion = validated_data.pop('fecha_elaboracion', None)
+        fecha_vencimiento = validated_data.pop('fecha_vencimiento', None)
+        motivo = validated_data.pop('motivo', 'Ingreso inicial')
+        observacion = validated_data.pop('observacion', None)
+
+        with transaction.atomic():
+            producto, producto_creado = Producto.objects.get_or_create(
+                sku=validated_data['sku'],
+                defaults={
+                    'nombre': validated_data['nombre'],
+                    'descripcion': validated_data.get('descripcion', ''),
+                    'valor_unitario': validated_data['valor_unitario'],
+                    'marca': marca,
+                    'unidad_medida': validated_data.get('unidad_medida', ''),
+                    'requiere_control_vencimiento': validated_data.get('requiere_control_vencimiento', True),
+                    'registro_sanitario': validated_data.get('registro_sanitario'),
+                    'es_caja': validated_data.get('es_caja', False),
+                    'largo_mm': validated_data.get('largo_mm', 0),
+                    'ancho_mm': validated_data.get('ancho_mm', 0),
+                    'alto_mm': validated_data.get('alto_mm', 0),
+                    'peso_mg': validated_data.get('peso_mg', 0),
+                    'volumen_ml': validated_data.get('volumen_ml', 0),
+                    'activo': True,
+                },
+            )
+
+            for categoria in categorias:
+                CategoriaProducto.objects.get_or_create(
+                    producto=producto,
+                    categoria=categoria,
+                )
+
+            lote, _ = Lote.objects.get_or_create(
+                producto=producto,
+                codigo_lote=codigo_lote,
+                defaults={
+                    'fecha_elaboracion': fecha_elaboracion,
+                    'fecha_vencimiento': fecha_vencimiento,
+                    'activo': True,
+                },
+            )
+
+            inventario, inventario_creado = Inventario.objects.get_or_create(
+                lote=lote,
+                sucursal=sucursal,
+                defaults={
+                    'cantidad_disponible': 0,
+                    'cantidad_reservada': 0,
+                    'stock_critico': stock_critico,
+                },
+            )
+
+            inventario.cantidad_disponible += cantidad
+            if not inventario_creado:
+                inventario.stock_critico = max(inventario.stock_critico, stock_critico)
+            inventario.save()
+
+            movimiento = MovimientoInventario.objects.create(
+                inventario=inventario,
+                usuario=usuario,
+                tipo_movimiento='ENTRADA',
+                cantidad=cantidad,
+                motivo=motivo,
+                observacion=observacion,
+            )
+
+        return {
+            'producto': producto,
+            'lote': lote,
+            'inventario': inventario,
+            'movimiento': movimiento,
+            'producto_creado': producto_creado,
+        }

@@ -38,6 +38,24 @@ class EsEjecutivoOAdministrador(BasePermission):
             request.user, 'Ejecutivo', 'Administrador'
         )
 
+
+class EsTrabajador(BasePermission):
+    """
+    Permite acceso a trabajadores activos o administradores internos.
+    """
+    message = "Solo trabajadores o administradores de MEDISTOCK pueden realizar esta accion."
+
+    def has_permission(self, request, view):
+        usuario = request.user
+        if not usuario or not usuario.is_authenticated:
+            return False
+
+        if usuario.is_staff or tiene_rol(usuario, 'Administrador'):
+            return True
+
+        perfil = getattr(usuario, 'perfiltrabajador', None)
+        return bool(perfil and perfil.activo)
+
 class EsDuennoDelPedidoYEditableHastaAprobado(BasePermission):
     estados_editables =  ['PENDIENTE', 'APROBADO']
 

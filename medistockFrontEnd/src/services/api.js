@@ -475,6 +475,8 @@ export const obtenerTrasladosInventario = () => api.get('/inventory/traslados/')
 // --- Administracion de productos ---
 export const listarProductosAdmin = () => api.get('/inventory/productos/')
 export const crearProducto = (data) => api.post('/inventory/productos/', data)
+export const ingresarProductoInventario = (data) =>
+  api.post('/inventory/ingresar-producto/', data)
 export const listarCategoriasAdmin = () => api.get('/inventory/categorias/')
 export const listarMarcasAdmin = () => api.get('/inventory/marcas/')
 

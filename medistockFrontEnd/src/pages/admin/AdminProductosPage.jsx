@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
   crearProducto,
+  ingresarProductoInventario,
   listarCategoriasAdmin,
   listarMarcasAdmin,
   listarProductosAdmin,
@@ -10,6 +11,8 @@ import {
 import './AdminProductosPage.css'
 
 const ROLES_PERMITIDOS = ['admin', 'operador', 'analista']
+const MODO_SIMPLE = 'simple'
+const MODO_STOCK = 'stock'
 
 const FORM_INICIAL = {
   sku: '',
@@ -17,7 +20,7 @@ const FORM_INICIAL = {
   descripcion: '',
   valor_unitario: '',
   marca_id: '',
-  categoria_referencia: '',
+  categoria_ids: [],
   unidad_medida: 'unidad',
   largo_mm: '',
   ancho_mm: '',
@@ -28,6 +31,14 @@ const FORM_INICIAL = {
   requiere_control_vencimiento: true,
   activo: true,
   es_caja: false,
+  codigo_lote: '',
+  fecha_elaboracion: '',
+  fecha_vencimiento: '',
+  sucursal_id: '',
+  cantidad: '',
+  stock_critico: '0',
+  motivo: 'Ingreso inicial',
+  observacion: '',
 }
 
 function obtenerLista(data) {
@@ -56,16 +67,62 @@ function extraerMensajeError(data) {
 
 function mensajeErrorApi(error, fallback) {
   if (!error.response) return 'No fue posible conectar con el backend.'
-  if (error.response.status === 403) return 'No tienes permisos para consultar esta información.'
-  if (error.response.status === 404) return 'No se encontró información asociada.'
+  if (error.response.status === 403) return 'No tienes permisos para consultar esta informacion.'
+  if (error.response.status === 404) return 'No se encontro informacion asociada.'
   if (error.response.status === 409) return extraerMensajeError(error.response.data) || fallback
   if (error.response.status === 500) return 'Error del servidor. Intenta nuevamente.'
-  return extraerMensajeError(error.response.data) || fallback
+
+  const mensaje = extraerMensajeError(error.response.data)
+  if (/sucursal/i.test(mensaje) && /(no existe|invalid pk|does not exist|pk)/i.test(mensaje)) {
+    return 'La sucursal indicada no existe.'
+  }
+  if (/categoria|categor/i.test(mensaje) && /(no existe|invalid pk|does not exist|pk)/i.test(mensaje)) {
+    return 'Una de las categorias seleccionadas no existe.'
+  }
+  if (/lote/i.test(mensaje) && /(exist|unique|duplic)/i.test(mensaje)) {
+    return 'El lote ya existe. El backend puede recuperarlo y sumar stock si corresponde.'
+  }
+  return mensaje || fallback
 }
 
 function numeroOpcional(valor) {
   if (valor === '' || valor === null || valor === undefined) return 0
   return Number(valor)
+}
+
+function obtenerFechaProducto(producto = {}) {
+  return (
+    producto.created_at ||
+    producto.fecha_creacion ||
+    producto.creado_en ||
+    producto.created ||
+    producto.fecha_registro ||
+    null
+  )
+}
+
+function ordenarProductosRecientes(productos = []) {
+  return [...productos]
+    .map((producto, index) => ({ producto, index }))
+    .sort((a, b) => {
+      const fechaA = obtenerFechaProducto(a.producto)
+      const fechaB = obtenerFechaProducto(b.producto)
+
+      if (fechaA || fechaB) {
+        const tiempoA = fechaA ? new Date(fechaA).getTime() : 0
+        const tiempoB = fechaB ? new Date(fechaB).getTime() : 0
+        if (tiempoA !== tiempoB) return tiempoB - tiempoA
+      }
+
+      const idA = Number(a.producto.id)
+      const idB = Number(b.producto.id)
+      if (!Number.isNaN(idA) && !Number.isNaN(idB) && idA !== idB) {
+        return idB - idA
+      }
+
+      return a.index - b.index
+    })
+    .map(({ producto }) => producto)
 }
 
 function normalizarProducto(producto = {}) {
@@ -87,6 +144,7 @@ export default function AdminProductosPage() {
   const [categorias, setCategorias] = useState([])
   const [marcas, setMarcas] = useState([])
   const [form, setForm] = useState(FORM_INICIAL)
+  const [modoCreacion, setModoCreacion] = useState(MODO_SIMPLE)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
@@ -96,6 +154,7 @@ export default function AdminProductosPage() {
 
   const rol = String(usuario?.rol || '').toLowerCase()
   const autorizado = ROLES_PERMITIDOS.includes(rol)
+  const esModoStock = modoCreacion === MODO_STOCK
 
   const productosNormalizados = useMemo(
     () => productos.map(normalizarProducto),
@@ -111,7 +170,7 @@ export default function AdminProductosPage() {
         listarCategoriasAdmin(),
         listarMarcasAdmin(),
       ])
-      setProductos(obtenerLista(productosR.data))
+      setProductos(ordenarProductosRecientes(obtenerLista(productosR.data)))
       setCategorias(obtenerLista(categoriasR.data))
       setMarcas(obtenerLista(marcasR.data))
     } catch (err) {
@@ -134,17 +193,54 @@ export default function AdminProductosPage() {
     if (exito) setExito('')
   }
 
+  const setCategoriasSeleccionadas = (event) => {
+    const seleccionadas = Array.from(event.target.selectedOptions).map((option) => option.value)
+    setCampo('categoria_ids', seleccionadas)
+  }
+
+  const cambiarModo = (modo) => {
+    setModoCreacion(modo)
+    setErroresForm({})
+    setError('')
+    setExito('')
+  }
+
   const validar = () => {
     const errores = {}
     if (!form.sku.trim()) errores.sku = 'El SKU es obligatorio.'
     if (!form.nombre.trim()) errores.nombre = 'El nombre es obligatorio.'
-    if (form.valor_unitario === '' || Number(form.valor_unitario) < 0) {
-      errores.valor_unitario = 'El valor unitario debe ser mayor o igual a 0.'
+    if (form.valor_unitario === '' || Number(form.valor_unitario) <= 0) {
+      errores.valor_unitario = 'El valor unitario debe ser mayor a 0.'
     }
+
+    if (esModoStock) {
+      if (!form.categoria_ids.length) errores.categoria_ids = 'Selecciona al menos una categoria.'
+      if (!form.codigo_lote.trim()) errores.codigo_lote = 'El codigo de lote es obligatorio.'
+      if (!form.sucursal_id || Number(form.sucursal_id) <= 0) {
+        errores.sucursal_id = 'La sucursal es obligatoria y debe existir.'
+      }
+      if (!form.cantidad || Number(form.cantidad) <= 0) {
+        errores.cantidad = 'La cantidad inicial debe ser mayor a 0.'
+      }
+      if (form.stock_critico === '' || Number(form.stock_critico) < 0) {
+        errores.stock_critico = 'El stock critico debe ser mayor o igual a 0.'
+      }
+      if (form.requiere_control_vencimiento && !form.fecha_vencimiento) {
+        errores.fecha_vencimiento = 'La fecha de vencimiento es obligatoria si controla vencimiento.'
+      }
+      if (form.fecha_elaboracion && form.fecha_vencimiento) {
+        const elaboracion = new Date(`${form.fecha_elaboracion}T00:00:00`)
+        const vencimiento = new Date(`${form.fecha_vencimiento}T00:00:00`)
+        if (vencimiento <= elaboracion) {
+          errores.fecha_vencimiento = 'La fecha de vencimiento debe ser posterior a la elaboracion.'
+        }
+      }
+    }
+
     return errores
   }
 
-  const construirPayload = () => ({
+  const construirPayloadSimple = () => ({
     sku: form.sku.trim(),
     nombre: form.nombre.trim(),
     descripcion: form.descripcion.trim(),
@@ -162,6 +258,41 @@ export default function AdminProductosPage() {
     es_caja: Boolean(form.es_caja),
   })
 
+  const construirPayloadIngreso = () => {
+    const payload = {
+      sku: form.sku.trim(),
+      nombre: form.nombre.trim(),
+      descripcion: form.descripcion.trim(),
+      valor_unitario: Number(form.valor_unitario),
+      categoria_ids: form.categoria_ids.map(Number),
+      unidad_medida: form.unidad_medida.trim() || 'unidad',
+      largo_mm: numeroOpcional(form.largo_mm),
+      ancho_mm: numeroOpcional(form.ancho_mm),
+      alto_mm: numeroOpcional(form.alto_mm),
+      peso_mg: numeroOpcional(form.peso_mg),
+      volumen_ml: numeroOpcional(form.volumen_ml),
+      requiere_control_vencimiento: Boolean(form.requiere_control_vencimiento),
+      registro_sanitario: form.registro_sanitario.trim(),
+      es_caja: Boolean(form.es_caja),
+      codigo_lote: form.codigo_lote.trim(),
+      fecha_elaboracion: form.fecha_elaboracion || null,
+      fecha_vencimiento: form.fecha_vencimiento || null,
+      sucursal_id: Number(form.sucursal_id),
+      cantidad: Number(form.cantidad),
+      stock_critico: Number(form.stock_critico || 0),
+      motivo: form.motivo.trim() || 'Ingreso inicial',
+      observacion: form.observacion.trim(),
+    }
+
+    if (form.marca_id) payload.marca_id = Number(form.marca_id)
+    return payload
+  }
+
+  const limpiarFormulario = () => {
+    setForm(FORM_INICIAL)
+    setErroresForm({})
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
@@ -173,9 +304,14 @@ export default function AdminProductosPage() {
 
     setGuardando(true)
     try {
-      await crearProducto(construirPayload())
-      setExito('Producto creado correctamente. Si no tiene stock, aparecerá como sin stock en catálogo.')
-      setForm(FORM_INICIAL)
+      if (esModoStock) {
+        await ingresarProductoInventario(construirPayloadIngreso())
+        setExito('Producto ingresado correctamente con lote, inventario y movimiento de entrada.')
+      } else {
+        await crearProducto(construirPayloadSimple())
+        setExito('Producto creado correctamente. Si no tiene stock, aparecera como sin stock en catalogo.')
+      }
+      limpiarFormulario()
       setMostrarForm(false)
       await cargarDatos()
     } catch (err) {
@@ -208,9 +344,9 @@ export default function AdminProductosPage() {
       <div className="admin-productos-header">
         <div>
           <p className="admin-productos-kicker">Inventario administrativo</p>
-          <h1 className="page-title">Gestión de productos</h1>
+          <h1 className="page-title">Gestion de productos</h1>
           <p className="text-muted">
-            Crea productos usando el endpoint real de inventario. El stock se gestiona por lotes e inventarios.
+            Crea productos simples o ingresa productos con lote, inventario y movimiento inicial.
           </p>
         </div>
         <div className="admin-productos-toolbar">
@@ -233,9 +369,32 @@ export default function AdminProductosPage() {
         <section className="card admin-productos-form-card">
           <div className="admin-productos-section-header">
             <h2>Nuevo producto</h2>
-            <span>Campos reales del serializer Producto</span>
+            <span>{esModoStock ? 'Ingreso con stock inicial' : 'Producto simple'}</span>
           </div>
+
+          <div className="admin-productos-mode-selector">
+            <button
+              type="button"
+              className={`admin-productos-mode-btn ${modoCreacion === MODO_SIMPLE ? 'is-active' : ''}`}
+              onClick={() => cambiarModo(MODO_SIMPLE)}
+            >
+              Producto simple
+            </button>
+            <button
+              type="button"
+              className={`admin-productos-mode-btn ${modoCreacion === MODO_STOCK ? 'is-active' : ''}`}
+              onClick={() => cambiarModo(MODO_STOCK)}
+            >
+              Producto con stock inicial
+            </button>
+          </div>
+
           <form className="admin-productos-form" onSubmit={handleSubmit}>
+            <div className="admin-productos-subheader">
+              <h3>Datos del producto</h3>
+              <p>{esModoStock ? 'Se crea o recupera por SKU.' : 'Alta simple sin lote ni stock inicial.'}</p>
+            </div>
+
             <label>
               SKU *
               <input value={form.sku} onChange={(e) => setCampo('sku', e.target.value)} placeholder="MED-001" />
@@ -261,21 +420,30 @@ export default function AdminProductosPage() {
               </select>
             </label>
             <label>
-              Categoría de referencia
-              <select value={form.categoria_referencia} onChange={(e) => setCampo('categoria_referencia', e.target.value)}>
-                <option value="">Sin categoría asociada</option>
+              {esModoStock ? 'Categorias *' : 'Categorias'}
+              <select
+                multiple={esModoStock}
+                value={esModoStock ? form.categoria_ids : (form.categoria_ids[0] || '')}
+                onChange={setCategoriasSeleccionadas}
+              >
+                {!esModoStock && <option value="">Sin categoria asociada</option>}
                 {categorias.map((categoria) => (
                   <option key={categoria.id} value={categoria.id}>{categoria.nombre}</option>
                 ))}
               </select>
-              <small>El serializer actual no acepta asignar categorías en el POST de producto.</small>
+              <small>
+                {esModoStock
+                  ? 'Usa Ctrl/Cmd para seleccionar mas de una categoria.'
+                  : 'Solo se enviaran al usar ingreso con stock inicial.'}
+              </small>
+              {erroresForm.categoria_ids && <small>{erroresForm.categoria_ids}</small>}
             </label>
             <label>
               Unidad de medida
               <input value={form.unidad_medida} onChange={(e) => setCampo('unidad_medida', e.target.value)} />
             </label>
             <label className="admin-productos-form-wide">
-              Descripción
+              Descripcion
               <textarea rows="3" value={form.descripcion} onChange={(e) => setCampo('descripcion', e.target.value)} />
             </label>
             <label>
@@ -308,7 +476,7 @@ export default function AdminProductosPage() {
                 Control vencimiento
               </label>
               <label>
-                <input type="checkbox" checked={form.activo} onChange={(e) => setCampo('activo', e.target.checked)} />
+                <input type="checkbox" checked={form.activo} disabled={esModoStock} onChange={(e) => setCampo('activo', e.target.checked)} />
                 Activo
               </label>
               <label>
@@ -316,12 +484,65 @@ export default function AdminProductosPage() {
                 Es caja
               </label>
             </div>
+
+            {esModoStock && (
+              <>
+                <div className="admin-productos-subheader">
+                  <h3>Datos del lote</h3>
+                  <p>Si el lote ya existe para el SKU, el backend puede recuperarlo y sumar stock.</p>
+                </div>
+                <label>
+                  Codigo lote *
+                  <input value={form.codigo_lote} onChange={(e) => setCampo('codigo_lote', e.target.value)} placeholder="L001" />
+                  {erroresForm.codigo_lote && <small>{erroresForm.codigo_lote}</small>}
+                </label>
+                <label>
+                  Fecha elaboracion
+                  <input type="date" value={form.fecha_elaboracion} onChange={(e) => setCampo('fecha_elaboracion', e.target.value)} />
+                </label>
+                <label>
+                  Fecha vencimiento
+                  <input type="date" value={form.fecha_vencimiento} onChange={(e) => setCampo('fecha_vencimiento', e.target.value)} />
+                  {erroresForm.fecha_vencimiento && <small>{erroresForm.fecha_vencimiento}</small>}
+                </label>
+
+                <div className="admin-productos-subheader">
+                  <h3>Datos de inventario</h3>
+                  <p>La sucursal debe corresponder a una sucursal existente.</p>
+                </div>
+                <label>
+                  Sucursal ID *
+                  <input type="number" min="1" value={form.sucursal_id} onChange={(e) => setCampo('sucursal_id', e.target.value)} />
+                  <small>Debe corresponder a una sucursal existente.</small>
+                  {erroresForm.sucursal_id && <small>{erroresForm.sucursal_id}</small>}
+                </label>
+                <label>
+                  Cantidad inicial *
+                  <input type="number" min="1" value={form.cantidad} onChange={(e) => setCampo('cantidad', e.target.value)} />
+                  {erroresForm.cantidad && <small>{erroresForm.cantidad}</small>}
+                </label>
+                <label>
+                  Stock critico *
+                  <input type="number" min="0" value={form.stock_critico} onChange={(e) => setCampo('stock_critico', e.target.value)} />
+                  {erroresForm.stock_critico && <small>{erroresForm.stock_critico}</small>}
+                </label>
+                <label>
+                  Motivo
+                  <input value={form.motivo} onChange={(e) => setCampo('motivo', e.target.value)} />
+                </label>
+                <label className="admin-productos-form-wide">
+                  Observacion
+                  <textarea rows="2" value={form.observacion} onChange={(e) => setCampo('observacion', e.target.value)} />
+                </label>
+              </>
+            )}
+
             <div className="admin-productos-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setForm(FORM_INICIAL)}>
+              <button type="button" className="btn btn-secondary" onClick={limpiarFormulario}>
                 Limpiar
               </button>
               <button type="submit" className="btn btn-primary" disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Crear producto'}
+                {guardando ? 'Guardando...' : (esModoStock ? 'Ingresar producto con stock' : 'Crear producto')}
               </button>
             </div>
           </form>
@@ -345,7 +566,7 @@ export default function AdminProductosPage() {
                   <th>SKU</th>
                   <th>Nombre</th>
                   <th>Marca</th>
-                  <th>Categorías</th>
+                  <th>Categorias</th>
                   <th>Precio</th>
                   <th>Unidad</th>
                   <th>Estado</th>
