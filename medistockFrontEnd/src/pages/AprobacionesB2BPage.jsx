@@ -168,8 +168,28 @@ export default function AprobacionesB2BPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {exito && <div className="alert alert-success">{exito}</div>}
+      {error && (
+        <div className="aprobaciones-feedback aprobaciones-feedback-error" role="alert">
+          <div>
+            <strong>No fue posible aprobar el pedido</strong>
+            <p>{error}</p>
+          </div>
+          <button type="button" onClick={() => setError('')} aria-label="Cerrar alerta de error">
+            Cerrar
+          </button>
+        </div>
+      )}
+      {exito && (
+        <div className="aprobaciones-feedback aprobaciones-feedback-success" role="status">
+          <div>
+            <strong>Acción completada</strong>
+            <p>{exito}</p>
+          </div>
+          <button type="button" onClick={() => setExito('')} aria-label="Cerrar alerta de éxito">
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="spinner" />

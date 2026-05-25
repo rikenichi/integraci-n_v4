@@ -25,6 +25,8 @@ import ConveniosInstitucionalesPage from './pages/ConveniosInstitucionalesPage'
 import GuiasDespachoPage from './pages/GuiasDespachoPage'
 import AprobacionesB2BPage from './pages/AprobacionesB2BPage'
 import DashboardAnalistaPage from './pages/DashboardAnalistaPage'
+import AdminProductosPage from './pages/admin/AdminProductosPage'
+import AdminTrabajadoresPage from './pages/admin/AdminTrabajadoresPage'
 
 function RutaProtegida({ children }) {
   const { usuario, cargando } = useAuth()
@@ -62,6 +64,8 @@ export default function App() {
             <Route path="/panel/guias-despacho" element={<RutaProtegida><GuiasDespachoPage /></RutaProtegida>} />
             <Route path="/panel/aprobaciones-b2b" element={<RutaProtegida><AprobacionesB2BPage /></RutaProtegida>} />
             <Route path="/panel/dashboard-analista" element={<RutaProtegida><DashboardAnalistaPage /></RutaProtegida>} />
+            <Route path="/admin/productos" element={<RutaProtegida><AdminProductosPage /></RutaProtegida>} />
+            <Route path="/admin/trabajadores" element={<RutaProtegida><AdminTrabajadoresPage /></RutaProtegida>} />
             <Route path="/dte/:id/comprobante" element={<RutaProtegida><ComprobanteDtePage /></RutaProtegida>} />
             <Route path="/pedidos/:id" element={<RutaProtegida><PedidoDetallePage /></RutaProtegida>} />
           </Routes>

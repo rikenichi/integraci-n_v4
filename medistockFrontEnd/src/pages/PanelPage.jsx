@@ -230,6 +230,7 @@ const ROLES_CONVENIOS = ['admin', 'ejecutivo', 'analista']
 const ROLES_GUIAS_DESPACHO = ['admin', 'operador', 'analista']
 const ROLES_APROBACIONES_B2B = ['admin', 'ejecutivo', 'analista']
 const ROLES_DASHBOARD_ANALISTA = ['admin', 'analista']
+const ROLES_ADMIN_TRABAJADORES = ['admin']
 
 const ESTADOS_PAGABLES = ['pendiente', 'aprobado']
 const ESTADOS_CON_TRACKING = [
@@ -271,6 +272,7 @@ export default function PanelPage() {
   const puedeVerGuiasDespacho = ROLES_GUIAS_DESPACHO.includes(rol)
   const puedeVerAprobacionesB2B = ROLES_APROBACIONES_B2B.includes(rol)
   const puedeVerDashboardAnalista = ROLES_DASHBOARD_ANALISTA.includes(rol)
+  const puedeGestionarTrabajadores = ROLES_ADMIN_TRABAJADORES.includes(rol)
 
   const tabsDisponibles = useMemo(() => [
     { id: 'pedidos', label: 'Pedidos', visible: true },
@@ -452,6 +454,18 @@ export default function PanelPage() {
             {puedeVerInventario && (
                 <button className="btn btn-secondary" onClick={() => navigate('/panel/traslados-inventario')}>
                   Traslados de inventario
+                </button>
+            )}
+
+            {puedeVerInventario && (
+                <button className="btn btn-secondary" onClick={() => navigate('/admin/productos')}>
+                  Gestión de productos
+                </button>
+            )}
+
+            {puedeGestionarTrabajadores && (
+                <button className="btn btn-secondary" onClick={() => navigate('/admin/trabajadores')}>
+                  Gestión de trabajadores
                 </button>
             )}
 

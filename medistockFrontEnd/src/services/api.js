@@ -472,6 +472,21 @@ export const obtenerOrdenesCompra = () => respuestaDemo(DEMO_ORDENES_COMPRA)
 // --- Traslados de inventario ---
 export const obtenerTrasladosInventario = () => api.get('/inventory/traslados/')
 
+// --- Administracion de productos ---
+export const listarProductosAdmin = () => api.get('/inventory/productos/')
+export const crearProducto = (data) => api.post('/inventory/productos/', data)
+export const listarCategoriasAdmin = () => api.get('/inventory/categorias/')
+export const listarMarcasAdmin = () => api.get('/inventory/marcas/')
+
+// --- Administracion de trabajadores ---
+export const registrarTrabajador = (data) =>
+  api.post('/accounts/registro/trabajador/', data)
+export const listarTrabajadores = () => api.get('/accounts/trabajadores/')
+export const actualizarTrabajador = (id, data) =>
+  api.patch(`/accounts/trabajadores/${id}/`, data)
+export const desactivarTrabajador = (id) =>
+  actualizarTrabajador(id, { activo: false })
+
 // --- Integraciones y auditoria ---
 // Demo controlado: integrations tiene modelos, pero aun no expone URLs en backend.
 export const obtenerIntegracionesExternas = () => respuestaDemo(DEMO_INTEGRACIONES)
