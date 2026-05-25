@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCarrito } from '../context/CarritoContext'
+import { puedeComprar } from '../utils/permisos'
 import './Navbar.css'
 
 const ETIQUETAS_ROL = {
@@ -18,6 +19,7 @@ export default function Navbar() {
   const { usuario, cerrarSesion } = useAuth()
   const { totalItems } = useCarrito()
   const navigate = useNavigate()
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
 
   const handleLogout = async () => {
     await cerrarSesion()
@@ -75,19 +77,25 @@ export default function Navbar() {
             </>
           )}
 
-          <Link to="/carrito" className="cart-link">
-            <span>Carrito</span>
-            {totalItems > 0 && <strong>{totalItems}</strong>}
-          </Link>
+          {usuarioPuedeComprar && (
+            <Link to="/carrito" className="cart-link">
+              <span>Carrito</span>
+              {totalItems > 0 && <strong>{totalItems}</strong>}
+            </Link>
+          )}
         </div>
       </div>
 
       <nav className="category-nav">
         <Link to="/">Inicio</Link>
-        <Link to="/catalogo?search=ofertas">Ofertas</Link>
-        <Link to="/catalogo?grupo=medicamentos">Medicamentos</Link>
-        <Link to="/catalogo?grupo=insumos">Insumos médicos</Link>
-        <Link to="/catalogo?grupo=bienestar">Bienestar</Link>
+        {usuarioPuedeComprar && (
+          <>
+            <Link to="/catalogo?search=ofertas">Ofertas</Link>
+            <Link to="/catalogo?grupo=medicamentos">Medicamentos</Link>
+            <Link to="/catalogo?grupo=insumos">Insumos médicos</Link>
+            <Link to="/catalogo?grupo=bienestar">Bienestar</Link>
+          </>
+        )}
         <Link to="/contacto">Contacto</Link>
         {usuario && <Link to="/panel">Mi Panel</Link>}
         {usuario && <Link to="/perfil">Mi Perfil</Link>}

@@ -67,3 +67,14 @@ export function enriquecerProducto(producto = {}) {
     dosis: data.dosis || null,
   }
 }
+
+/**
+ * Devuelve el nombre enriquecido (con dosis si aplica) para un SKU dado.
+ * Útil para vistas que solo necesitan el nombre, como tablas de inventario.
+ * Si no hay mapeo, devuelve el nombre original.
+ */
+export function nombreEnriquecido(sku, nombreOriginal = '') {
+  const data = obtenerEnriquecimiento(sku)
+  if (!data) return nombreOriginal
+  return data.dosis ? `${data.nombre} ${data.dosis}` : data.nombre
+}

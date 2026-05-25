@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { enriquecerProducto } from '../utils/catalogoEnriquecido'
+import { enriquecerProducto, nombreEnriquecido } from '../utils/catalogoEnriquecido'
 
 // In Vite development, VITE_API_URL=/api uses the proxy in vite.config.js.
 // The localhost fallback keeps direct backend access compatible.
@@ -401,16 +401,20 @@ export async function obtenerStockProductoCompatible(codigo) {
 
 function normalizarInventarioResumen(inventarios = [], lotes = [], movimientos = []) {
   const stockCritico = inventarios
-    .map((item) => ({
-      producto_id: item.lote?.producto?.id || item.lote?.producto_id,
-      producto_codigo: item.lote?.producto?.sku || item.producto_codigo,
-      producto_nombre: item.lote?.producto?.nombre || item.producto_nombre || 'Producto no informado',
-      sucursal_nombre: item.sucursal_nombre || `Sucursal ${item.sucursal}`,
-      cantidad: item.cantidad_disponible,
-      cantidad_reservada: item.cantidad_reservada,
-      disponible: item.stock_neto ?? Number(item.cantidad_disponible || 0) - Number(item.cantidad_reservada || 0),
-      stock_minimo: item.stock_critico,
-    }))
+    .map((item) => {
+      const sku = item.lote?.producto?.sku || item.producto_codigo
+      const nombreOriginal = item.lote?.producto?.nombre || item.producto_nombre || 'Producto no informado'
+      return {
+        producto_id: item.lote?.producto?.id || item.lote?.producto_id,
+        producto_codigo: sku,
+        producto_nombre: nombreEnriquecido(sku, nombreOriginal),
+        sucursal_nombre: item.sucursal_nombre || `Sucursal ${item.sucursal}`,
+        cantidad: item.cantidad_disponible,
+        cantidad_reservada: item.cantidad_reservada,
+        disponible: item.stock_neto ?? Number(item.cantidad_disponible || 0) - Number(item.cantidad_reservada || 0),
+        stock_minimo: item.stock_critico,
+      }
+    })
     .filter((item) => Number(item.disponible) <= Number(item.stock_minimo || 0))
 
   const hoy = new Date()
@@ -421,8 +425,10 @@ function normalizarInventarioResumen(inventarios = [], lotes = [], movimientos =
     .filter((lote) => lote.fecha_vencimiento)
     .map((lote) => {
       const vence = new Date(`${lote.fecha_vencimiento}T00:00:00`)
+      const sku = lote.producto?.sku
+      const nombreOriginal = lote.producto?.nombre || 'Producto no informado'
       return {
-        producto_nombre: lote.producto?.nombre || 'Producto no informado',
+        producto_nombre: nombreEnriquecido(sku, nombreOriginal),
         codigo_lote: lote.codigo_lote,
         sucursal_nombre: '-',
         fecha_vencimiento: lote.fecha_vencimiento,
@@ -434,17 +440,21 @@ function normalizarInventarioResumen(inventarios = [], lotes = [], movimientos =
     .filter((lote) => lote._vence <= limite)
     .map(({ _vence, ...lote }) => lote)
 
-  const movimientosRecientes = movimientos.slice(0, 10).map((movimiento) => ({
-    creado_en: movimiento.fecha_movimiento,
-    producto_nombre: movimiento.producto_nombre || movimiento.inventario_producto_nombre || '-',
-    sucursal_nombre: movimiento.sucursal_nombre || '-',
-    lote_codigo: movimiento.lote_codigo || '-',
-    tipo_movimiento: movimiento.tipo_movimiento,
-    cantidad: movimiento.cantidad,
-    referencia: movimiento.pedido || movimiento.compra_proveedor || movimiento.traslado_inventario || '-',
-    usuario: movimiento.usuario_nombre || movimiento.usuario || '-',
-    motivo: movimiento.motivo,
-  }))
+  const movimientosRecientes = movimientos.slice(0, 10).map((movimiento) => {
+    const sku = movimiento.producto_sku || movimiento.producto_codigo || movimiento.inventario_producto_sku
+    const nombreOriginal = movimiento.producto_nombre || movimiento.inventario_producto_nombre || '-'
+    return {
+      creado_en: movimiento.fecha_movimiento,
+      producto_nombre: nombreEnriquecido(sku, nombreOriginal),
+      sucursal_nombre: movimiento.sucursal_nombre || '-',
+      lote_codigo: movimiento.lote_codigo || '-',
+      tipo_movimiento: movimiento.tipo_movimiento,
+      cantidad: movimiento.cantidad,
+      referencia: movimiento.pedido || movimiento.compra_proveedor || movimiento.traslado_inventario || '-',
+      usuario: movimiento.usuario_nombre || movimiento.usuario || '-',
+      motivo: movimiento.motivo,
+    }
+  })
 
   return {
     stock_critico: stockCritico,

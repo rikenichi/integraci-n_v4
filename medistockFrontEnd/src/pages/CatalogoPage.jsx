@@ -5,6 +5,7 @@ import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 import { filtrarPorGrupo, obtenerGrupo } from '../utils/gruposCatalogo'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import './CatalogoPage.css'
 
 function formatPrecio(n) {
@@ -49,6 +50,8 @@ export default function CatalogoPage() {
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
   const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -225,7 +228,8 @@ export default function CatalogoPage() {
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={() => agregarItem(p)}
-                  disabled={Number(p.stock_disponible || 0) <= 0}
+                  disabled={Number(p.stock_disponible || 0) <= 0 || !usuarioPuedeComprar}
+                  title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
                 >
                   Agregar
                 </button>

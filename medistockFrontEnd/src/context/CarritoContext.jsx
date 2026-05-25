@@ -1,6 +1,17 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { puedeComprar } from '../utils/permisos'
 
 const CarritoContext = createContext(null)
+
+function rolUsuarioActual() {
+  try {
+    const usuarioRaw = localStorage.getItem('usuario')
+    if (!usuarioRaw) return null
+    return JSON.parse(usuarioRaw)?.rol || null
+  } catch {
+    return null
+  }
+}
 
 // IVA Chile 19%, ya incluido en precio. Costo flat para despacho a domicilio.
 export const IVA = 0.19
@@ -29,7 +40,14 @@ export function CarritoProvider({ children }) {
   }
 
   const agregarItem = (producto, cantidad = 1) => {
-    // Defensa central: nunca permitir productos sin stock en el carrito.
+    // Defensa central #1: solo roles autorizados pueden comprar.
+    const rol = rolUsuarioActual()
+    if (rol && !puedeComprar(rol)) {
+      console.warn(`No se agregó al carrito — el rol "${rol}" no tiene permitido comprar.`)
+      return false
+    }
+
+    // Defensa central #2: nunca permitir productos sin stock en el carrito.
     const stockDisponible = Number(producto?.stock_disponible ?? producto?.stock ?? 0)
     if (stockDisponible <= 0) {
       console.warn(`No se agregó al carrito "${producto?.nombre}" — stock agotado.`)

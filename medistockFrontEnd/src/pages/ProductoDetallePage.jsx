@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { obtenerProductoCompatible, obtenerStockProductoCompatible } from '../services/api'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import './ProductoDetallePage.css'
 
 function formatPrecio(n) {
@@ -42,13 +43,6 @@ export default function ProductoDetallePage() {
       .finally(() => setLoadingStock(false))
   }
 
-  const handleAgregar = () => {
-    if (sinStock) return
-    agregarItem(producto, cantidad)
-    setAgregado(true)
-    setTimeout(() => setAgregado(false), 2000)
-  }
-
   if (loading) return <div className="spinner" />
   if (error) return <div className="page-container"><div className="alert alert-error">{error}</div></div>
   if (!producto) return null
@@ -56,6 +50,16 @@ export default function ProductoDetallePage() {
   const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
   const stockDisponible = Number(producto.stock_disponible ?? producto.stock ?? 0)
   const sinStock = stockDisponible <= 0
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const bloqueado = sinStock || !usuarioPuedeComprar
+
+  const handleAgregar = () => {
+    if (bloqueado) return
+    agregarItem(producto, cantidad)
+    setAgregado(true)
+    setTimeout(() => setAgregado(false), 2000)
+  }
 
   return (
     <div className="page-container">
@@ -116,6 +120,12 @@ export default function ProductoDetallePage() {
               </div>
             )}
 
+            {!usuarioPuedeComprar && !sinStock && (
+              <div className="alert alert-info" style={{marginBottom:12}}>
+                {mensajeNoCompra}
+              </div>
+            )}
+
             <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:16}}>
               <label style={{fontWeight:500}}>Cantidad:</label>
               <input
@@ -130,10 +140,22 @@ export default function ProductoDetallePage() {
               <button
                 className={`btn btn-primary btn-lg ${agregado ? 'btn-success' : ''}`}
                 onClick={handleAgregar}
-                disabled={sinStock}
-                title={sinStock ? 'Producto sin stock' : ''}
+                disabled={bloqueado}
+                title={
+                  sinStock
+                    ? 'Producto sin stock'
+                    : !usuarioPuedeComprar
+                      ? mensajeNoCompra
+                      : ''
+                }
               >
-                {sinStock ? '✕ Sin stock' : agregado ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
+                {sinStock
+                  ? '✕ Sin stock'
+                  : !usuarioPuedeComprar
+                    ? '🔒 No disponible para tu rol'
+                    : agregado
+                      ? '✓ Agregado al carrito'
+                      : '🛒 Agregar al carrito'}
               </button>
               <button className="btn btn-secondary" onClick={verStock} disabled={loadingStock}>
                 {loadingStock ? 'Consultando...' : '📦 Ver stock por sucursal'}

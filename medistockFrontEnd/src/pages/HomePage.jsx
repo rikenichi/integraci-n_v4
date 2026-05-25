@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { obtenerProductosCompatibles } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useCarrito } from '../context/CarritoContext'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import Footer from '../components/Footer'
 import './HomePage.css'
 
@@ -98,6 +99,8 @@ function crearOfertaVisual(producto, index, esB2B) {
 export default function HomePage() {
   const { usuario } = useAuth()
   const { agregarItem } = useCarrito()
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
   const [productos, setProductos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -242,7 +245,12 @@ export default function HomePage() {
                     <Link className="btn-outline" to={`/producto/${producto.id}`}>
                       Ver detalle
                     </Link>
-                    <button type="button" onClick={() => agregarItem(producto)} disabled={sinStock}>
+                    <button
+                      type="button"
+                      onClick={() => agregarItem(producto)}
+                      disabled={sinStock || !usuarioPuedeComprar}
+                      title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
+                    >
                       Agregar
                     </button>
                   </div>
@@ -304,7 +312,12 @@ export default function HomePage() {
                       <strong>{formatearPrecio(oferta.precioActual)}</strong>
                     </div>
                   </div>
-                  <button type="button" onClick={() => agregarItem(producto)} disabled={sinStock}>
+                  <button
+                    type="button"
+                    onClick={() => agregarItem(producto)}
+                    disabled={sinStock || !usuarioPuedeComprar}
+                    title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
+                  >
                     Agregar al carro
                   </button>
                 </article>
