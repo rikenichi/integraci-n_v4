@@ -1,22 +1,35 @@
-import { useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
-import { obtenerProductoPublico } from '../services/medistockApi'
+import { useMemo } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { obtenerCatalogo, obtenerProductoPublico } from '../services/medistockApi'
 import { useApi } from '../hooks/useApi'
-import { formatPrecio, normalizarProducto } from '../utils/format'
+import { extraerLista, formatPrecio, normalizarProducto, urlCotizacion } from '../utils/format'
 import Badge from '../components/ui/Badge'
-import Button from '../components/ui/Button'
 import Spinner from '../components/ui/Spinner'
-import { useCart } from '../context/CartContext'
 import './ProductDetailPage.css'
 
 export default function ProductDetailPage() {
-  const { codigo } = useParams()
-  const navigate = useNavigate()
-  const { agregar } = useCart()
-  const [cantidad, setCantidad] = useState(1)
+  const { codigo } = useParams() // realmente es el id
 
-  const { data, cargando, error } = useApi(() => obtenerProductoPublico(codigo), [codigo])
-  const producto = data ? normalizarProducto(data) : null
+  // El catálogo trae stock_por_sucursal en vivo (el endpoint público individual no).
+  const { data: catalogoData, cargando: cargandoCatalogo } = useApi(obtenerCatalogo)
+  const { data: detalleData, cargando: cargandoDetalle, error } = useApi(
+    () => obtenerProductoPublico(codigo),
+    [codigo],
+  )
+
+  const cargando = cargandoCatalogo || cargandoDetalle
+
+  const producto = useMemo(() => {
+    if (!detalleData) return null
+    const desdeDetalle = normalizarProducto(detalleData)
+    // Enriquecer con stock por sucursal desde el catálogo
+    const desdeCatalogo = extraerLista(catalogoData).find((p) => Number(p.id) === Number(codigo))
+    if (desdeCatalogo) {
+      const conStock = normalizarProducto({ ...desdeDetalle, stock_por_sucursal: desdeCatalogo.stock_por_sucursal })
+      return { ...desdeDetalle, stock_por_sucursal: conStock.stock_por_sucursal, stock_total: conStock.stock_total }
+    }
+    return desdeDetalle
+  }, [detalleData, catalogoData, codigo])
 
   if (cargando) return <div className="page container"><Spinner /></div>
   if (error || !producto) {
@@ -29,11 +42,7 @@ export default function ProductDetailPage() {
   }
 
   const sinStock = producto.stock_total <= 0
-
-  const handleAgregar = () => {
-    agregar(producto, cantidad)
-    navigate('/carrito')
-  }
+  const sucursales = producto.stock_por_sucursal || []
 
   return (
     <div className="page">
@@ -74,7 +83,7 @@ export default function ProductDetailPage() {
                 <Badge variant="danger">Sin stock</Badge>
               ) : (
                 <Badge variant="success">
-                  Disponible · {producto.stock_total} unidades
+                  Disponible · {producto.stock_total} unidades en red MEDISTOCK
                 </Badge>
               )}
               <Badge variant="neutral">Cód. {producto.codigo}</Badge>
@@ -82,7 +91,7 @@ export default function ProductDetailPage() {
 
             <div className="product-detail-price">
               <strong>{formatPrecio(producto.precio)}</strong>
-              <small>por {producto.unidad} · IVA incluido</small>
+              <small>por {producto.unidad} · referencial, IVA incluido</small>
             </div>
 
             {producto.descripcion && (
@@ -92,43 +101,70 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            <div className="product-detail-actions">
-              <div className="cantidad-control">
-                <button
-                  type="button"
-                  onClick={() => setCantidad((c) => Math.max(1, c - 1))}
-                  disabled={cantidad <= 1}
-                  aria-label="Disminuir"
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  min="1"
-                  value={cantidad}
-                  onChange={(e) => setCantidad(Math.max(1, Number(e.target.value) || 1))}
-                />
-                <button
-                  type="button"
-                  onClick={() => setCantidad((c) => c + 1)}
-                  aria-label="Aumentar"
-                >
-                  +
-                </button>
-              </div>
-
-              <Button variant="primary" size="lg" onClick={handleAgregar} disabled={sinStock}>
-                {sinStock ? 'Sin stock' : 'Agregar al carrito'}
-              </Button>
+            <div className="product-detail-cta">
+              <a href={urlCotizacion(producto)} className="btn btn-primary btn-lg">
+                ✉️ Solicitar cotización
+              </a>
+              <a href="tel:+56222221111" className="btn btn-ghost btn-lg">
+                📞 Llamar a ventas
+              </a>
             </div>
 
-            <div className="product-detail-trust">
-              <div>🚚 <strong>Despacho 24–48h</strong> en RM</div>
-              <div>💳 <strong>Webpay y convenios B2B</strong></div>
-              <div>📋 <strong>Boleta o factura</strong> según cliente</div>
-            </div>
+            <p className="text-muted small product-detail-disclaimer">
+              Precios y stock provienen del API público de MEDISTOCK.
+              Para compras institucionales, solicitamos cotización formal con descuento por volumen.
+            </p>
           </div>
         </div>
+
+        <section className="card product-stock-card">
+          <header className="product-stock-head">
+            <div>
+              <h2>Disponibilidad por sucursal</h2>
+              <p className="text-muted">
+                Inventario consultado en vivo desde la red de centros de distribución MEDISTOCK.
+              </p>
+            </div>
+            <Badge variant={sinStock ? 'danger' : 'success'}>
+              {producto.stock_total} unidades en total
+            </Badge>
+          </header>
+
+          {sucursales.length === 0 ? (
+            <p className="text-muted text-center" style={{ padding: 24 }}>
+              No hay información de stock por sucursal para este producto.
+            </p>
+          ) : (
+            <table className="stock-table">
+              <thead>
+                <tr>
+                  <th>Sucursal</th>
+                  <th>Ciudad</th>
+                  <th>Disponible</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sucursales.map((s, i) => (
+                  <tr key={`${s.sucursal_id || s.sucursal}-${i}`}>
+                    <td><strong>{s.sucursal}</strong></td>
+                    <td>{s.ciudad || '—'}</td>
+                    <td>{s.disponible}</td>
+                    <td>
+                      {s.disponible <= 0 ? (
+                        <Badge variant="danger">Sin stock</Badge>
+                      ) : s.disponible < 10 ? (
+                        <Badge variant="warning">Bajo</Badge>
+                      ) : (
+                        <Badge variant="success">OK</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
       </div>
     </div>
   )

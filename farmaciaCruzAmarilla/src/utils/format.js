@@ -36,12 +36,32 @@ export function extraerLista(respuesta) {
   return respuesta?.results || respuesta || []
 }
 
-// Mapeo simple producto crudo del backend → forma uniforme para Cruz Amarilla.
+/**
+ * Normaliza un producto crudo del backend MEDISTOCK a una forma uniforme.
+ * Tolera dos formatos: catálogo (`stock_por_sucursal`, categoría como string)
+ * y endpoint público individual (categoría / marca como objetos anidados).
+ */
 export function normalizarProducto(item = {}) {
-  const stock = (item.stock_por_sucursal || []).reduce(
-    (total, s) => total + Number(s.stock_neto ?? s.disponible ?? 0),
-    0,
-  )
+  const stockPorSucursal = (item.stock_por_sucursal || []).map((s) => ({
+    sucursal_id: s.sucursal_id,
+    sucursal: s.sucursal_nombre || s.sucursal || `Sucursal ${s.sucursal_id || ''}`,
+    ciudad: s.ciudad || '',
+    disponible: Number(s.stock_neto ?? s.disponible ?? 0),
+  }))
+  const stockTotal = stockPorSucursal.reduce((acc, s) => acc + s.disponible, 0)
+
+  // Categoría puede venir como string en catálogo, como [{ categoria: { nombre } }] en endpoint público
+  let categoria = ''
+  if (typeof item.categoria_nombre === 'string') categoria = item.categoria_nombre
+  else if (Array.isArray(item.categorias) && item.categorias.length > 0) {
+    const c = item.categorias[0]
+    categoria = typeof c === 'string' ? c : c?.categoria?.nombre || c?.nombre || ''
+  }
+
+  // Marca puede venir como string (marca_nombre) o como objeto { nombre }
+  const marca =
+    item.marca_nombre || (typeof item.marca === 'string' ? item.marca : item.marca?.nombre) || ''
+
   return {
     id: item.id,
     codigo: item.codigo || item.sku || `PROD-${item.id}`,
@@ -49,11 +69,29 @@ export function normalizarProducto(item = {}) {
     descripcion: item.descripcion || '',
     precio: Number(item.precio_b2b ?? item.precio_b2c ?? item.valor_unitario ?? item.precio ?? 0),
     unidad: item.unidad_medida || 'unidad',
-    categoria: item.categoria_nombre || (item.categorias && item.categorias[0]) || '',
-    marca: item.marca_nombre || item.marca?.nombre || '',
+    categoria,
+    marca,
     imagen: item.imagen_url || null,
-    stock_total: stock,
+    stock_por_sucursal: stockPorSucursal,
+    stock_total: stockTotal,
     activo: item.activo !== false,
     requiere_receta: Boolean(item.requiere_receta),
   }
+}
+
+/**
+ * Construye una URL `mailto:` para solicitar cotización del producto.
+ */
+export function urlCotizacion(producto) {
+  const asunto = `Cotización: ${producto.nombre} (cód. ${producto.codigo})`
+  const cuerpo =
+    `Hola, me interesa solicitar una cotización del siguiente producto disponible en MEDISTOCK:\n\n` +
+    `• Producto: ${producto.nombre}\n` +
+    `• Código: ${producto.codigo}\n` +
+    `• Precio referencial: ${formatPrecio(producto.precio)} por ${producto.unidad}\n\n` +
+    `Cantidad estimada: \n` +
+    `RUT / Institución: \n` +
+    `Dirección de despacho: \n\n` +
+    `Saludos.`
+  return `mailto:b2b@cruzamarilla.cl?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
 }

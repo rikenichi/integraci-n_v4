@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom'
-import { formatPrecio, truncar } from '../utils/format'
+import { formatPrecio, truncar, urlCotizacion } from '../utils/format'
 import Badge from './ui/Badge'
-import Button from './ui/Button'
-import { useCart } from '../context/CartContext'
 import './ProductCard.css'
 
 function obtenerInicial(nombre) {
@@ -10,12 +8,11 @@ function obtenerInicial(nombre) {
 }
 
 export default function ProductCard({ producto }) {
-  const { agregar } = useCart()
   const sinStock = producto.stock_total <= 0
 
   return (
     <article className="product-card">
-      <Link to={`/producto/${producto.codigo}`} className="product-card-media">
+      <Link to={`/producto/${producto.id}`} className="product-card-media">
         {producto.imagen ? (
           <img src={producto.imagen} alt={producto.nombre} loading="lazy" />
         ) : (
@@ -31,7 +28,7 @@ export default function ProductCard({ producto }) {
           {producto.categoria && (
             <span className="product-card-categoria">{producto.categoria}</span>
           )}
-          <Link to={`/producto/${producto.codigo}`} className="product-card-title">
+          <Link to={`/producto/${producto.id}`} className="product-card-title">
             {truncar(producto.nombre, 60)}
           </Link>
           {producto.marca && (
@@ -56,15 +53,18 @@ export default function ProductCard({ producto }) {
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          block
-          disabled={sinStock}
-          onClick={() => agregar(producto, 1)}
-        >
-          {sinStock ? 'Sin stock' : 'Agregar al carro'}
-        </Button>
+        <div className="product-card-actions">
+          <Link to={`/producto/${producto.id}`} className="btn btn-primary btn-sm" style={{ flex: 1 }}>
+            Ver detalle
+          </Link>
+          <a
+            href={urlCotizacion(producto)}
+            className="btn btn-ghost btn-sm"
+            title="Solicitar cotización por email"
+          >
+            ✉
+          </a>
+        </div>
       </div>
     </article>
   )

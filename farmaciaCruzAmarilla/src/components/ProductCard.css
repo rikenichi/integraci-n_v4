@@ -92,3 +92,9 @@
   font-size: 0.75rem;
   margin-top: 2px;
 }
+
+.product-card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}

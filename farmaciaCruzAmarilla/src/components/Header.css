@@ -86,7 +86,7 @@
   font-size: 0.75rem;
 }
 
-.header-cart {
+.header-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -96,17 +96,12 @@
   border-radius: var(--ca-radius);
   font-weight: 600;
   font-size: 0.88rem;
-  position: relative;
   transition: background 0.18s, transform 0.15s;
 }
-.header-cart:hover {
+.header-cta:hover {
   background: var(--ca-primary-dark);
   color: var(--ca-ink);
   transform: translateY(-1px);
-}
-.header-cart-count {
-  background: var(--ca-ink);
-  color: var(--ca-primary);
 }
 
 @media (max-width: 880px) {

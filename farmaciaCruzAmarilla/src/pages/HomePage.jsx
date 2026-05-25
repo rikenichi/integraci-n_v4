@@ -8,10 +8,10 @@ import ProductCard from '../components/ProductCard'
 import './HomePage.css'
 
 const BENEFICIOS = [
-  { icono: '🚚', titulo: 'Despacho a todo Chile', desc: 'Coordinamos con courier en menos de 24 hrs.' },
-  { icono: '💊', titulo: 'Catálogo MEDISTOCK', desc: 'Stock en tiempo real desde el distribuidor.' },
-  { icono: '🔒', titulo: 'Pago seguro Webpay', desc: 'Transbank y convenios B2B disponibles.' },
-  { icono: '🏥', titulo: 'Atención clínica', desc: 'Asesoría dedicada para instituciones de salud.' },
+  { icono: '📡', titulo: 'Stock en vivo', desc: 'Inventario consultado en tiempo real al API de MEDISTOCK.' },
+  { icono: '📍', titulo: 'Por sucursal', desc: 'Visibilidad del stock disponible en cada centro de distribución.' },
+  { icono: '✉️', titulo: 'Cotización ágil', desc: 'Solicita precios institucionales en un clic.' },
+  { icono: '🏥', titulo: 'Foco clínico', desc: 'Catálogo orientado a profesionales e instituciones de salud.' },
 ]
 
 export default function HomePage() {
@@ -42,13 +42,13 @@ export default function HomePage() {
               Insumos clínicos con stock <span>en tiempo real</span>
             </h1>
             <p>
-              Catálogo respaldado por <strong>MEDISTOCK</strong>, despacho coordinado con Chilexpress
-              y pago seguro con Webpay Plus. Atendemos clínicas, consultas y profesionales independientes
-              en todo Chile.
+              Consulta el catálogo y stock <strong>en vivo</strong> de la red MEDISTOCK,
+              nuestro distribuidor estratégico. Verifica disponibilidad por sucursal
+              antes de solicitar cotización para tu clínica o consulta.
             </p>
             <div className="hero-cta">
               <Link to="/catalogo" className="btn btn-primary btn-lg">Explorar catálogo</Link>
-              <Link to="/sobre-nosotros" className="btn btn-ghost btn-lg">Convenios B2B</Link>
+              <Link to="/disponibilidad" className="btn btn-ghost btn-lg">Disponibilidad por sucursal</Link>
             </div>
 
             <div className="hero-stats">
