@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { COSTO_DESPACHO_DOMICILIO, useCarrito } from '../context/CarritoContext'
+import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import './CarritoPage.css'
 
@@ -21,7 +21,7 @@ export default function CarritoPage() {
   const navigate = useNavigate()
   const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
 
-  const { subtotal, descuento, neto, iva, despacho, total } = calcularResumen({ esB2B, tipoDespacho })
+  const { subtotal, descuento, neto, iva, total } = calcularResumen({ esB2B })
 
   if (items.length === 0) {
     return (
@@ -96,7 +96,7 @@ export default function CarritoPage() {
                 />
                 <div>
                   <strong>🚚 A domicilio</strong>
-                  <small>{formatPrecio(COSTO_DESPACHO_DOMICILIO)} extra</small>
+                  <small>Cotización Chilexpress al confirmar</small>
                 </div>
               </label>
               <label className={`resumen-radio ${tipoDespacho === 'retiro' ? 'resumen-radio-activo' : ''}`}>
@@ -131,15 +131,25 @@ export default function CarritoPage() {
 
           <div className="resumen-linea">
             <span>Costo de despacho</span>
-            <span>{despacho > 0 ? formatPrecio(despacho) : 'Gratis'}</span>
+            <span>
+              {tipoDespacho === 'retiro'
+                ? 'Gratis'
+                : <small className="text-muted">Se calcula al confirmar</small>}
+            </span>
           </div>
 
           <hr className="divider" />
 
           <div className="resumen-total">
-            <span>Total a pagar</span>
+            <span>{tipoDespacho === 'domicilio' ? 'Subtotal a pagar' : 'Total a pagar'}</span>
             <span>{formatPrecio(total)}</span>
           </div>
+
+          {tipoDespacho === 'domicilio' && (
+            <p className="text-muted" style={{ fontSize: '0.78rem', marginTop: 4 }}>
+              + costo de envío Chilexpress según comuna y peso (cotizado al confirmar)
+            </p>
+          )}
 
           <div className="resumen-iva-detalle">
             <div className="resumen-linea resumen-linea-mini">
