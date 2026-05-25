@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { enriquecerProducto } from '../utils/catalogoEnriquecido'
 
 // In Vite development, VITE_API_URL=/api uses the proxy in vite.config.js.
 // The localhost fallback keeps direct backend access compatible.
@@ -305,7 +306,7 @@ function normalizarProducto(item) {
   const stockPorSucursal = item.stock_por_sucursal || []
   const precio = item.valor_unitario ?? item.precio_b2c ?? item.precio_b2b ?? item.precio ?? 0
 
-  return {
+  const base = {
     ...item,
     id: item.id,
     codigo: item.codigo || item.sku || `PROD-${item.id}`,
@@ -325,6 +326,10 @@ function normalizarProducto(item) {
       0,
     ),
   }
+
+  // Capa cosmética: si el SKU está mapeado en catalogoEnriquecido,
+  // sobreescribimos nombre/descripcion y agregamos tipo_producto + dosis.
+  return enriquecerProducto(base)
 }
 
 function filtrarProductosLocalmente(productos, params = {}) {

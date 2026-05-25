@@ -72,8 +72,21 @@ export default function ProductoDetallePage() {
             <p className="text-muted" style={{fontSize:'0.8rem'}}>{producto.codigo}</p>
             <h1 style={{fontSize:'1.5rem', fontWeight:700, margin:'8px 0'}}>{producto.nombre}</h1>
 
+            {producto.tipo_producto && (
+              <span className="badge badge-info" style={{marginRight:6, marginBottom:8}}>
+                {producto.tipo_producto}
+              </span>
+            )}
+            {producto.dosis && (
+              <span className="badge badge-secondary" style={{marginBottom:8}}>
+                Presentación {producto.dosis}
+              </span>
+            )}
+
             {producto.requiere_receta && (
-              <span className="badge badge-warning" style={{marginBottom:12}}>Requiere receta médica</span>
+              <span className="badge badge-warning" style={{display:'block', marginBottom:12}}>
+                Requiere receta médica
+              </span>
             )}
 
             <p style={{color:'var(--color-text-muted)', marginBottom:16}}>{producto.descripcion}</p>
