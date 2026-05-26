@@ -194,6 +194,20 @@ function normalizarPedido(pedido = {}) {
     ? pedido.detalles.map(normalizarDetallePedido)
     : []
 
+  // Aliases para soportar dos formatos del backend:
+  //   - Versión local: usuario_*, direccion_entrega (string), notas, descuento
+  //   - Versión AWS:   cliente_*, direccion_entrega_id (sin texto), observacion, descuento_total
+  // Calculamos los aliases solo si la fuente "vieja" no vino, así no pisamos nada.
+  const nombreCliente = pedido.usuario_nombre || pedido.cliente_nombre || ''
+  const direccionTexto =
+    typeof pedido.direccion_entrega === 'string'
+      ? pedido.direccion_entrega
+      : pedido.direccion_entrega_texto
+        || (pedido.direccion_entrega_id
+              ? `Dirección registrada #${pedido.direccion_entrega_id}`
+              : '')
+  const notasPedido = pedido.notas || pedido.observacion || ''
+
   return {
     ...pedido,
     estado,
@@ -202,6 +216,18 @@ function normalizarPedido(pedido = {}) {
     actualizado_en: pedido.actualizado_en || pedido.fecha_actualizacion,
     descuento: pedido.descuento ?? pedido.descuento_total ?? 0,
     costo_envio: pedido.costo_envio ?? pedido.despacho_info?.costo_despacho ?? 0,
+    // Aliases de cliente/usuario
+    cliente_nombre: pedido.cliente_nombre || pedido.usuario_nombre || '',
+    usuario_nombre: nombreCliente,
+    usuario_username: pedido.usuario_username || pedido.cliente_username || '',
+    usuario_email: pedido.usuario_email || pedido.cliente_email || '',
+    usuario_rol: pedido.usuario_rol || pedido.rol_cliente || '',
+    // Aliases de despacho / observación
+    direccion_entrega: direccionTexto,
+    notas: notasPedido,
+    observacion: notasPedido,
+    // Mantener tipo_cliente derivado del tipo_venta cuando el backend no lo manda
+    tipo_cliente: pedido.tipo_cliente || pedido.tipo_venta || '',
     detalles,
   }
 }
