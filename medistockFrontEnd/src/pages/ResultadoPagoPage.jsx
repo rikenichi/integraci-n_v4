@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPedido, simularPago, iniciarWebpay } from '../services/api'
+import { obtenerCotizacionPedido } from '../utils/cotizacionStorage'
 import './ResultadoPagoPage.css'
 
 function formatPrecio(n) {
@@ -39,6 +40,12 @@ export default function ResultadoPagoPage() {
       .finally(() => setLoading(false))
   }, [pedidoId])
 
+  // Cotización Chilexpress persistida desde el checkout (frontend-only,
+  // el backend aún no tiene campo costo_envio en el modelo Pedido).
+  const cotizacionGuardada = useMemo(() => obtenerCotizacionPedido(pedidoId), [pedidoId])
+  const costoEnvio = Number(pedido?.costo_envio || cotizacionGuardada?.costo || 0)
+  const totalConEnvio = Number(pedido?.total || 0) + costoEnvio
+
   // Flujo demo local: no llama a rutas backend pendientes.
   const handlePagoSimulado = async () => {
     setProcesando(true)
@@ -49,7 +56,7 @@ export default function ResultadoPagoPage() {
         metodo: metodoPago,
         numero_tarjeta: numeroCuenta,
         nombre_titular: titularCuenta,
-        monto: pedido?.total || 0,
+        monto: totalConEnvio,
       })
       setResultado(data)
     } catch (err) {
@@ -190,7 +197,7 @@ export default function ResultadoPagoPage() {
               >
                 {procesandoWebpay
                   ? 'Conectando con Transbank...'
-                  : `🏦 Pagar ${formatPrecio(pedido.total)} con WebPay Plus`
+                  : `🏦 Pagar ${formatPrecio(totalConEnvio)} con WebPay Plus`
                 }
               </button>
 
@@ -281,11 +288,26 @@ export default function ResultadoPagoPage() {
               </div>
             )}
             <div className="resumen-item">
-              <span>Envío{pedido.courier_nombre ? ` (${pedido.courier_nombre})` : ''}</span>
-              <span>{formatPrecio(pedido.costo_envio || 0)}</span>
+              <span>
+                Envío
+                {cotizacionGuardada?.servicio
+                  ? ` (Chilexpress ${cotizacionGuardada.servicio})`
+                  : pedido.courier_nombre
+                    ? ` (${pedido.courier_nombre})`
+                    : ''}
+              </span>
+              <span>
+                {costoEnvio > 0 ? formatPrecio(costoEnvio) : 'Sin costo'}
+              </span>
             </div>
+            {cotizacionGuardada && (
+              <div className="resumen-item" style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                <span>Peso final · {cotizacionGuardada.peso_kg} kg · destino {cotizacionGuardada.destino || '—'}</span>
+                <span>Cód. servicio {cotizacionGuardada.codigo}</span>
+              </div>
+            )}
             <div className="resumen-item resumen-total">
-              <span>Total</span><span>{formatPrecio(pedido.total)}</span>
+              <span>Total a pagar</span><span>{formatPrecio(totalConEnvio)}</span>
             </div>
 
             {/* Este botón solo ejecuta el flujo simulado */}
@@ -296,7 +318,7 @@ export default function ResultadoPagoPage() {
             >
               {procesando
                 ? 'Procesando...'
-                : `Pagar (simulado) ${formatPrecio(pedido.total)}`
+                : `Pagar (simulado) ${formatPrecio(totalConEnvio)}`
               }
             </button>
             <p className="text-muted mt-1" style={{fontSize:'0.72rem', textAlign:'center'}}>

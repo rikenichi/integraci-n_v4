@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCarrito } from '../context/CarritoContext'
 import { puedeComprar } from '../utils/permisos'
@@ -19,7 +19,13 @@ export default function Navbar() {
   const { usuario, cerrarSesion } = useAuth()
   const { totalItems } = useCarrito()
   const navigate = useNavigate()
+  const location = useLocation()
   const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+
+  // Compara ruta + query string. Se usa para que /catalogo?grupo=medicamentos
+  // y /catalogo?grupo=insumos sean considerados secciones distintas.
+  const rutaActual = location.pathname + location.search
+  const navClass = (to) => `category-nav-link${rutaActual === to ? ' nav-activo' : ''}`
 
   const handleLogout = async () => {
     await cerrarSesion()
@@ -87,18 +93,18 @@ export default function Navbar() {
       </div>
 
       <nav className="category-nav">
-        <Link to="/">Inicio</Link>
+        <Link to="/" className={navClass('/')}>Inicio</Link>
         {usuarioPuedeComprar && (
           <>
-            <Link to="/catalogo?search=ofertas">Ofertas</Link>
-            <Link to="/catalogo?grupo=medicamentos">Medicamentos</Link>
-            <Link to="/catalogo?grupo=insumos">Insumos médicos</Link>
-            <Link to="/catalogo?grupo=bienestar">Bienestar</Link>
+            <Link to="/catalogo?search=ofertas" className={navClass('/catalogo?search=ofertas')}>Ofertas</Link>
+            <Link to="/catalogo?grupo=medicamentos" className={navClass('/catalogo?grupo=medicamentos')}>Medicamentos</Link>
+            <Link to="/catalogo?grupo=insumos" className={navClass('/catalogo?grupo=insumos')}>Insumos médicos</Link>
+            <Link to="/catalogo?grupo=bienestar" className={navClass('/catalogo?grupo=bienestar')}>Bienestar</Link>
           </>
         )}
-        <Link to="/contacto">Contacto</Link>
-        {usuario && <Link to="/panel">Mi Panel</Link>}
-        {usuario && <Link to="/perfil">Mi Perfil</Link>}
+        <Link to="/contacto" className={navClass('/contacto')}>Contacto</Link>
+        {usuario && <Link to="/panel" className={navClass('/panel')}>Mi Panel</Link>}
+        {usuario && <Link to="/perfil" className={navClass('/perfil')}>Mi Perfil</Link>}
       </nav>
     </header>
   )

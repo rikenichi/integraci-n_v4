@@ -177,11 +177,25 @@
   font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: background 0.18s, color 0.18s;
 }
 
 .category-nav a:hover {
-  color: var(--color-primary);
+  color: var(--color-text);
+  background: rgba(72, 202, 228, 0.18);
   text-decoration: none;
+}
+
+.category-nav a.nav-activo {
+  background: var(--color-secondary);
+  color: var(--color-text);
+  box-shadow: 0 2px 6px rgba(72, 202, 228, 0.35);
+}
+
+.category-nav a.nav-activo:hover {
+  background: var(--color-secondary);
 }
 
 @media (max-width: 900px) {

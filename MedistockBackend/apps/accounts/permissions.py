@@ -56,8 +56,9 @@ class EsTrabajador(BasePermission):
         perfil = getattr(usuario, 'perfiltrabajador', None)
         return bool(perfil and perfil.activo)
 
+
 class EsDuennoDelPedidoYEditableHastaAprobado(BasePermission):
-    estados_editables =  ['PENDIENTE', 'APROBADO']
+    estados_editables = ['PENDIENTE', 'APROBADO']
 
     def has_object_permission(self, request, view, obj):
         usuario = request.user

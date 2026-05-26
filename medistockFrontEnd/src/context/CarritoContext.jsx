@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { puedeComprar } from '../utils/permisos'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { useToast } from './ToastContext'
 
 const CarritoContext = createContext(null)
 
@@ -13,11 +14,14 @@ function rolUsuarioActual() {
   }
 }
 
-// IVA Chile 19%, ya incluido en precio. Costo flat para despacho a domicilio.
+// IVA Chile 19%, ya incluido en el precio del producto.
+// El costo de despacho se cotiza dinámicamente con Chilexpress en el checkout
+// (ConfirmacionPedidoPage), ya que depende de la comuna y el peso del pedido.
+// El carrito muestra "se calcula al confirmar" en vez de un monto fijo.
 export const IVA = 0.19
-export const COSTO_DESPACHO_DOMICILIO = 3000
 
 export function CarritoProvider({ children }) {
+  const { mostrarToast } = useToast()
   const [items, setItems] = useState(() => {
     const stored = localStorage.getItem('carrito')
     return stored ? JSON.parse(stored) : []
@@ -44,6 +48,7 @@ export function CarritoProvider({ children }) {
     const rol = rolUsuarioActual()
     if (rol && !puedeComprar(rol)) {
       console.warn(`No se agregó al carrito — el rol "${rol}" no tiene permitido comprar.`)
+      mostrarToast(razonNoCompra(rol), 'error')
       return false
     }
 
@@ -51,6 +56,7 @@ export function CarritoProvider({ children }) {
     const stockDisponible = Number(producto?.stock_disponible ?? producto?.stock ?? 0)
     if (stockDisponible <= 0) {
       console.warn(`No se agregó al carrito "${producto?.nombre}" — stock agotado.`)
+      mostrarToast(`"${producto?.nombre || 'Producto'}" está agotado`, 'error')
       return false
     }
 
@@ -66,6 +72,7 @@ export function CarritoProvider({ children }) {
       }
       return [...prev, { producto, cantidad: Math.min(cantidad, stockDisponible) }]
     })
+    mostrarToast('Producto agregado al carrito', 'success')
     return true
   }
 
@@ -95,25 +102,26 @@ export function CarritoProvider({ children }) {
     }, 0)
 
   /**
-   * Desglose tributario y de despacho a partir del subtotal con IVA.
+   * Desglose tributario a partir del subtotal con IVA.
    *
    * - subtotal:           suma de precios (con IVA incluido)
    * - descuento:          10% institucional, opcional
-   * - despacho:           $3.000 si domicilio, 0 si retiro
    * - baseAfectaIva:      subtotal − descuento (el envío no agrega IVA en este modelo)
    * - neto:               baseAfectaIva / 1.19
    * - iva:                baseAfectaIva − neto
-   * - total:              baseAfectaIva + despacho
+   * - total:              baseAfectaIva (sin incluir despacho; este se cotiza en el checkout)
+   *
+   * IMPORTANTE: el costo de despacho NO se calcula acá. Depende de comuna y
+   * peso, y se cotiza con Chilexpress en ConfirmacionPedidoPage.
    */
-  const calcularResumen = ({ esB2B = false, tipoDespacho: td = tipoDespacho } = {}) => {
+  const calcularResumen = ({ esB2B = false } = {}) => {
     const subtotal = calcularTotal(esB2B)
     const descuento = esB2B ? Math.round(subtotal * 0.10) : 0
     const baseAfectaIva = subtotal - descuento
     const neto = Math.round(baseAfectaIva / (1 + IVA))
     const iva = baseAfectaIva - neto
-    const despacho = td === 'domicilio' ? COSTO_DESPACHO_DOMICILIO : 0
-    const total = baseAfectaIva + despacho
-    return { subtotal, descuento, baseAfectaIva, neto, iva, despacho, total }
+    const total = baseAfectaIva
+    return { subtotal, descuento, baseAfectaIva, neto, iva, total }
   }
 
   return (

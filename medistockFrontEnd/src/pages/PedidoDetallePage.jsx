@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { obtenerPedidoDetalle } from '../services/api'
+import { obtenerCotizacionPedido } from '../utils/cotizacionStorage'
 import './PedidoDetallePage.css'
 
 const ESTADOS_PAGABLES = ['pendiente', 'aprobado']
@@ -101,6 +102,12 @@ export default function PedidoDetallePage() {
   const despacho = pedido?.despacho_info
   const dte = pedido?.dte_info
   const esCliente = ROLES_CLIENTE.includes(usuario?.rol)
+
+  // Cotización Chilexpress guardada por el frontend al crear el pedido
+  // (el backend aún no persiste costo_envio en el modelo Pedido).
+  const cotizacionGuardada = useMemo(() => obtenerCotizacionPedido(id), [id])
+  const costoEnvio = Number(pedido?.costo_envio || cotizacionGuardada?.costo || 0)
+  const totalConEnvio = Number(pedido?.total || 0) + costoEnvio
   const puedePagar = ESTADOS_PAGABLES.includes(pedido?.estado) &&
     esCliente
   const puedeVerTracking = Boolean(despacho?.id) || ESTADOS_CON_TRACKING.includes(pedido?.estado)
@@ -170,7 +177,7 @@ export default function PedidoDetallePage() {
         </div>
         <div className="pedido-hero-total">
           <span>Total pedido</span>
-          <strong>{formatPrecio(pedido.total)}</strong>
+          <strong>{formatPrecio(totalConEnvio)}</strong>
         </div>
       </section>
 
@@ -209,8 +216,20 @@ export default function PedidoDetallePage() {
           <div className="pedido-totales">
             <p><span>Subtotal productos</span><strong>{formatPrecio(pedido.subtotal)}</strong></p>
             <p className="muted-total"><span>Descuento B2B</span><strong>{formatPrecio(pedido.descuento)}</strong></p>
-            <p><span>Envío</span><strong>{formatPrecio(pedido.costo_envio)}</strong></p>
-            <p className="pedido-total-final"><span>Total</span><strong>{formatPrecio(pedido.total)}</strong></p>
+            <p>
+              <span>
+                Envío
+                {cotizacionGuardada?.servicio ? ` · Chilexpress ${cotizacionGuardada.servicio}` : ''}
+              </span>
+              <strong>{costoEnvio > 0 ? formatPrecio(costoEnvio) : 'Sin costo'}</strong>
+            </p>
+            {cotizacionGuardada && (
+              <p className="muted-total" style={{ fontSize: '0.78rem' }}>
+                <span>Peso final {cotizacionGuardada.peso_kg} kg · cód. servicio {cotizacionGuardada.codigo}</span>
+                <strong>{cotizacionGuardada.destino || ''}</strong>
+              </p>
+            )}
+            <p className="pedido-total-final"><span>Total</span><strong>{formatPrecio(totalConEnvio)}</strong></p>
           </div>
         </section>
       </div>

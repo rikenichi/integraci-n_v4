@@ -4,11 +4,9 @@ import { obtenerProductoCompatible, obtenerStockProductoCompatible } from '../se
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { Badge, Button, Spinner } from '../components/ui'
+import { formatPrecio } from '../utils/format'
 import './ProductoDetallePage.css'
-
-function formatPrecio(n) {
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(n)
-}
 
 export default function ProductoDetallePage() {
   const { codigo } = useParams()
@@ -43,7 +41,7 @@ export default function ProductoDetallePage() {
       .finally(() => setLoadingStock(false))
   }
 
-  if (loading) return <div className="spinner" />
+  if (loading) return <Spinner />
   if (error) return <div className="page-container"><div className="alert alert-error">{error}</div></div>
   if (!producto) return null
 
@@ -68,7 +66,7 @@ export default function ProductoDetallePage() {
       <div className="detalle-grid mt-2">
         <div className="detalle-imagen card">
           <span style={{fontSize:'5rem'}}>🏥</span>
-          <span className="badge badge-secondary mt-1">{producto.categoria_nombre}</span>
+          <Badge variant="secondary" className="mt-1">{producto.categoria_nombre}</Badge>
         </div>
 
         <div className="detalle-info">
@@ -157,9 +155,9 @@ export default function ProductoDetallePage() {
                       ? '✓ Agregado al carrito'
                       : '🛒 Agregar al carrito'}
               </button>
-              <button className="btn btn-secondary" onClick={verStock} disabled={loadingStock}>
+              <Button variant="secondary" onClick={verStock} loading={loadingStock}>
                 {loadingStock ? 'Consultando...' : '📦 Ver stock por sucursal'}
-              </button>
+              </Button>
             </div>
             {errorStock && <div className="alert alert-warning mt-1">{errorStock}</div>}
           </div>

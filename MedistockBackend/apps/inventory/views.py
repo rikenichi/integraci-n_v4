@@ -1,8 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import (
 	Categoria,
 	Marca,
@@ -21,10 +21,10 @@ from .serializers import (
 	MovimientoInventarioSerializer,
 	TrasladoInventarioSerializer,
 	ProductoCatalogoSerializer,
-	IngresoProductoSerializer,
+	ProductoImagenSerializer,
+	IngresoProductoSerializer
 )
 from apps.accounts.permissions import EsTrabajador
-
 
 class CategoriaListCreateView(generics.ListCreateAPIView):
 	queryset = Categoria.objects.all().order_by('nombre')
@@ -60,6 +60,57 @@ class ProductoDetailView(generics.RetrieveUpdateDestroyAPIView):
 	queryset = Producto.objects.all()
 	serializer_class = ProductoSerializer
 	permission_classes = [IsAuthenticated]
+
+
+class ProductoImagenView(APIView):
+	"""
+    PATCH /api/inventory/productos/<pk>/imagen/
+
+    Sube o reemplaza la imagen de un producto existente.
+    Acepta multipart/form-data con el campo 'imagen'.
+    Solo accesible para usuarios autenticados.
+
+    Ejemplo con fetch:
+        const form = new FormData();
+        form.append('imagen', archivoFile);
+        fetch(`/api/inventory/productos/${id}/imagen/`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+        });
+    """
+	permission_classes = [IsAuthenticated]
+	parser_classes = [MultiPartParser, FormParser]
+
+	def patch(self, request, pk):
+		producto = generics.get_object_or_404(Producto, pk=pk)
+
+		serializer = ProductoImagenSerializer(
+			producto,
+			data=request.data,
+			partial=True,
+			context={'request': request},
+		)
+		serializer.is_valid(raise_exception=True)
+		serializer.save()
+
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+	def delete(self, request, pk):
+		"""Elimina la imagen del producto dejando el campo vacío."""
+		producto = generics.get_object_or_404(Producto, pk=pk)
+
+		if not producto.imagen:
+			return Response(
+				{'detail': 'Este producto no tiene imagen.'},
+				status=status.HTTP_404_NOT_FOUND,
+			)
+
+		producto.imagen.delete(save=True)  # borra el archivo físico y guarda el modelo
+		return Response(
+			{'detail': 'Imagen eliminada correctamente.'},
+			status=status.HTTP_200_OK,
+		)
 
 
 class LoteListCreateView(generics.ListCreateAPIView):
@@ -132,7 +183,6 @@ class CatalogoProductosView(generics.ListAPIView):
 	"""Catálogo público con info de producto, marca, categorías y stock por sucursal."""
 	serializer_class = ProductoCatalogoSerializer
 	permission_classes = [AllowAny]
-
 
 	def get_queryset(self):
 		queryset = (
@@ -209,42 +259,41 @@ class ProductoPublicDetailView(generics.RetrieveAPIView):
 
 
 class IngresoProductoView(APIView):
-	"""
-	POST /api/inventory/ingresar-producto/
+    """
+    POST /api/inventory/ingresar-producto/
 
-	Crea o recupera un producto, asocia categorias, crea lote,
-	actualiza inventario y registra un movimiento de ENTRADA.
-	"""
-	permission_classes = [EsTrabajador]
+    Crea (o recupera) un producto con su lote, lo asigna a una sucursal
+    con el stock indicado y registra el movimiento de ENTRADA.
+    Solo accesible para trabajadores activos.
+    """
+    permission_classes = [EsTrabajador]
 
-	def post(self, request):
-		serializer = IngresoProductoSerializer(
-			data=request.data,
-			context={'request': request},
-		)
-		serializer.is_valid(raise_exception=True)
-		resultado = serializer.save()
+    def post(self, request):
+        serializer = IngresoProductoSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
 
-		producto = resultado['producto']
-		lote = resultado['lote']
-		inventario = resultado['inventario']
-		movimiento = resultado['movimiento']
+        producto = result['producto']
+        inventario = result['inventario']
 
-		return Response(
-			{
-				'mensaje': (
-					'Producto creado e ingresado al inventario.'
-					if resultado['producto_creado']
-					else 'Producto existente. Stock actualizado.'
-				),
-				'producto_id': producto.id,
-				'sku': producto.sku,
-				'lote_id': lote.id,
-				'codigo_lote': lote.codigo_lote,
-				'inventario_id': inventario.id,
-				'sucursal_id': inventario.sucursal_id,
-				'stock_actual': inventario.cantidad_disponible,
-				'movimiento_id': movimiento.id,
-			},
-			status=status.HTTP_201_CREATED,
-		)
+        return Response(
+            {
+                'mensaje': (
+                    'Producto creado e ingresado al inventario.'
+                    if result['producto_creado']
+                    else 'Producto existente. Stock actualizado.'
+                ),
+                'producto_id':    producto.id,
+                'sku':            producto.sku,
+                'lote_id':        result['lote'].id,
+                'codigo_lote':    result['lote'].codigo_lote,
+                'inventario_id':  inventario.id,
+                'sucursal_id':    inventario.sucursal_id,
+                'stock_actual':   inventario.cantidad_disponible,
+                'movimiento_id':  result['movimiento'].id,
+            },
+            status=status.HTTP_201_CREATED,
+        )

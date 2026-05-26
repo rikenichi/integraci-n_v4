@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
+import { guardarCotizacionPedido } from '../utils/cotizacionStorage'
 import {
   crearDireccionEntrega,
   crearPedido,
@@ -941,6 +942,22 @@ export default function ConfirmacionPedidoPage() {
       console.log('Payload crear pedido:', payload)
 
       const { data } = await crearPedido(payload)
+
+      // Persistir la cotización Chilexpress asociada al pedido recién creado.
+      // El backend no guarda costo_envio, así que el frontend mantiene el detalle
+      // para mostrar el desglose correcto en el resultado del pago y en Mis Pedidos.
+      if (data?.id) {
+        guardarCotizacionPedido(data.id, {
+          costo: costoEnvio,
+          servicio: obtenerDescripcionServicio(servicioSeleccionado),
+          codigo: servicioSeleccionado?.serviceTypeCode ?? null,
+          peso_kg: servicioSeleccionado?.finalWeight ?? null,
+          delivery_type: servicioSeleccionado?.deliveryType ?? null,
+          sucursal_origen: textoOrigen,
+          destino: textoDestino,
+          total_con_envio: total,
+        })
+      }
 
       vaciarCarrito()
       navigate(`/resultado-pago/${data.id}`)
