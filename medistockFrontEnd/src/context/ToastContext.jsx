@@ -17,7 +17,7 @@ const ToastContext = createContext(null)
 let idCounter = 0
 const nuevoId = () => ++idCounter
 
-const DURACION_DEFAULT_MS = 2500
+const DURACION_DEFAULT_MS = 5000
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
