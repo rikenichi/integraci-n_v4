@@ -76,6 +76,20 @@ function perfilDesdeToken(accessToken) {
   }
 }
 
+function leerUsuarioGuardado() {
+  try {
+    const raw = localStorage.getItem('usuario')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    localStorage.removeItem('usuario')
+    return null
+  }
+}
+
+function guardarUsuario(usuarioPerfil) {
+  localStorage.setItem('usuario', JSON.stringify(usuarioPerfil))
+}
+
 function resolverRolFrontend(perfil) {
   const rolBackend = String(perfil?.rol || perfil?.Rol || '').toUpperCase()
   const datos = perfil?.datos || {}
@@ -133,23 +147,49 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const recuperarSesionMinima = (accessToken) => {
+    const usuarioGuardado = leerUsuarioGuardado()
+    if (usuarioGuardado) return usuarioGuardado
+    return normalizarPerfil(perfilDesdeToken(accessToken))
+  }
+
   useEffect(() => {
     let activo = true
     const init = async () => {
       const access = localStorage.getItem('access_token')
+      const refresh = localStorage.getItem('refresh_token')
       if (!access) {
         localStorage.removeItem('usuario')
-        localStorage.removeItem('refresh_token')
+        if (!refresh) localStorage.removeItem('refresh_token')
         if (activo) setCargando(false)
         return
       }
       try {
         const perfil = await getPerfil()
         const usuarioPerfil = normalizarPerfil(perfil)
-        localStorage.setItem('usuario', JSON.stringify(usuarioPerfil))
+        guardarUsuario(usuarioPerfil)
         if (activo) setUsuario(usuarioPerfil)
-      } catch {
-        localStorage.clear()
+      } catch (error) {
+        const status = error.response?.status
+
+        if (status === 404) {
+          const usuarioPerfil = recuperarSesionMinima(access)
+          guardarUsuario(usuarioPerfil)
+          if (activo) setUsuario(usuarioPerfil)
+          return
+        }
+
+        if (status === 401 || status === 403 || !refresh) {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('usuario')
+          if (activo) setUsuario(null)
+          return
+        }
+
+        const usuarioPerfil = recuperarSesionMinima(access)
+        guardarUsuario(usuarioPerfil)
+        if (activo) setUsuario(usuarioPerfil)
       } finally {
         if (activo) setCargando(false)
       }
@@ -175,7 +215,7 @@ export function AuthProvider({ children }) {
       perfil = perfilDesdeToken(data.access)
     }
     const usuarioPerfil = normalizarPerfil(perfil)
-    localStorage.setItem('usuario', JSON.stringify(usuarioPerfil))
+    guardarUsuario(usuarioPerfil)
     setUsuario(usuarioPerfil)
     return usuarioPerfil
   }
@@ -190,9 +230,18 @@ export function AuthProvider({ children }) {
   }
 
   const refrescarPerfil = async () => {
-    const perfil = await getPerfil()
-    const usuarioPerfil = normalizarPerfil(perfil)
-    localStorage.setItem('usuario', JSON.stringify(usuarioPerfil))
+    const access = localStorage.getItem('access_token')
+    let usuarioPerfil
+
+    try {
+      const perfil = await getPerfil()
+      usuarioPerfil = normalizarPerfil(perfil)
+    } catch (error) {
+      if (error.response?.status !== 404) throw error
+      usuarioPerfil = recuperarSesionMinima(access)
+    }
+
+    guardarUsuario(usuarioPerfil)
     setUsuario(usuarioPerfil)
     return usuarioPerfil
   }
