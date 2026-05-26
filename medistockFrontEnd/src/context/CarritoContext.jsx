@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { puedeComprar } from '../utils/permisos'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { useToast } from './ToastContext'
 
 const CarritoContext = createContext(null)
 
@@ -20,6 +21,7 @@ function rolUsuarioActual() {
 export const IVA = 0.19
 
 export function CarritoProvider({ children }) {
+  const { mostrarToast } = useToast()
   const [items, setItems] = useState(() => {
     const stored = localStorage.getItem('carrito')
     return stored ? JSON.parse(stored) : []
@@ -46,6 +48,7 @@ export function CarritoProvider({ children }) {
     const rol = rolUsuarioActual()
     if (rol && !puedeComprar(rol)) {
       console.warn(`No se agregó al carrito — el rol "${rol}" no tiene permitido comprar.`)
+      mostrarToast(razonNoCompra(rol), 'error')
       return false
     }
 
@@ -53,6 +56,7 @@ export function CarritoProvider({ children }) {
     const stockDisponible = Number(producto?.stock_disponible ?? producto?.stock ?? 0)
     if (stockDisponible <= 0) {
       console.warn(`No se agregó al carrito "${producto?.nombre}" — stock agotado.`)
+      mostrarToast(`"${producto?.nombre || 'Producto'}" está agotado`, 'error')
       return false
     }
 
@@ -68,6 +72,7 @@ export function CarritoProvider({ children }) {
       }
       return [...prev, { producto, cantidad: Math.min(cantidad, stockDisponible) }]
     })
+    mostrarToast('Producto agregado al carrito', 'success')
     return true
   }
 

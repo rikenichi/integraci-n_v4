@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CarritoProvider } from './context/CarritoContext'
+import { ToastProvider } from './context/ToastContext'
 import { puedeComprar } from './utils/permisos'
 
 import Navbar from './components/Navbar'
+import ToastViewport from './components/ToastViewport'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegistroPage from './pages/RegistroPage'
@@ -51,6 +53,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ToastProvider>
         <CarritoProvider>
           <Navbar />
           <Routes>
@@ -80,7 +83,9 @@ export default function App() {
             <Route path="/dte/:id/comprobante" element={<RutaProtegida><ComprobanteDtePage /></RutaProtegida>} />
             <Route path="/pedidos/:id" element={<RutaProtegida><PedidoDetallePage /></RutaProtegida>} />
           </Routes>
+          <ToastViewport />
         </CarritoProvider>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )
