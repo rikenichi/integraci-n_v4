@@ -50,7 +50,7 @@ export default function CatalogoPage() {
   const grupoActivo = obtenerGrupo(grupoActivoId)
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
-  const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const esB2B = usuario?.rol === 'cliente_b2b'
   const usuarioPuedeComprar = puedeComprar(usuario?.rol)
   const mensajeNoCompra = razonNoCompra(usuario?.rol)
 

@@ -3,6 +3,7 @@ import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { Button, EmptyState } from '../components/ui'
 import { formatPrecio, obtenerPrecioProducto } from '../utils/format'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import './CarritoPage.css'
 
 export default function CarritoPage() {
@@ -17,7 +18,9 @@ export default function CarritoPage() {
   } = useCarrito()
   const { usuario } = useAuth()
   const navigate = useNavigate()
-  const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const esB2B = usuario?.rol === 'cliente_b2b'
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
 
   const { subtotal, descuento, neto, iva, total } = calcularResumen({ esB2B })
 
@@ -77,6 +80,12 @@ export default function CarritoPage() {
 
         <div className="carrito-resumen card">
           <h3 className="section-title">Resumen del pedido</h3>
+
+          {!usuarioPuedeComprar && (
+            <div className="alert alert-warning">
+              {mensajeNoCompra}
+            </div>
+          )}
 
           <div className="resumen-despacho">
             <p className="resumen-label">Tipo de despacho</p>
@@ -166,7 +175,14 @@ export default function CarritoPage() {
             </p>
           )}
 
-          <Button variant="primary" size="lg" block onClick={() => navigate('/confirmar-pedido')} className="mt-2">
+          <Button
+            variant="primary"
+            size="lg"
+            block
+            onClick={() => navigate('/confirmar-pedido')}
+            className="mt-2"
+            disabled={!usuarioPuedeComprar}
+          >
             Confirmar pedido →
           </Button>
         </div>

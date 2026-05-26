@@ -4,6 +4,7 @@ import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { guardarCotizacionPedido } from '../utils/cotizacionStorage'
 import { obtenerPrecioProducto } from '../utils/format'
+import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import {
   crearDireccionEntrega,
   crearPedido,
@@ -410,7 +411,9 @@ export default function ConfirmacionPedidoPage() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
 
-  const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const esB2B = usuario?.rol === 'cliente_b2b'
+  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const mensajeNoCompra = razonNoCompra(usuario?.rol)
 
   const [direcciones, setDirecciones] = useState([])
   const [direccionRegistrada, setDireccionRegistrada] = useState(null)
@@ -504,7 +507,8 @@ export default function ConfirmacionPedidoPage() {
   )
 
   const puedeCrearPedido = Boolean(
-      direccion.trim()
+      usuarioPuedeComprar
+      && direccion.trim()
       && regionCodigo
       && comunaCodigo
       && cotizacionValida
@@ -536,6 +540,10 @@ export default function ConfirmacionPedidoPage() {
   }, [invalidarCotizacion])
 
   const activarDireccionAlternativa = () => {
+    if (!usuarioPuedeComprar) {
+      setError(mensajeNoCompra)
+      return
+    }
     setModoDireccion('alternativa')
     setDireccion('')
     setRegionCodigo('')
@@ -564,6 +572,13 @@ export default function ConfirmacionPedidoPage() {
   }, [])
 
   useEffect(() => {
+    if (!usuarioPuedeComprar) {
+      setDirecciones([])
+      setDireccionRegistrada(null)
+      setCargandoDirecciones(false)
+      return
+    }
+
     setCargandoDirecciones(true)
 
     obtenerMisDirecciones()
@@ -589,7 +604,7 @@ export default function ConfirmacionPedidoPage() {
         .finally(() => {
           setCargandoDirecciones(false)
         })
-  }, [aplicarDireccionRegistrada])
+  }, [aplicarDireccionRegistrada, usuarioPuedeComprar])
 
   useEffect(() => {
     if (!regionCodigo) {
@@ -888,6 +903,11 @@ export default function ConfirmacionPedidoPage() {
   }
 
   const handleConfirmar = async () => {
+    if (!usuarioPuedeComprar) {
+      setError(mensajeNoCompra)
+      return
+    }
+
     if (!direccion.trim()) {
       setError('La direccion de entrega es obligatoria.')
       return
@@ -981,6 +1001,20 @@ export default function ConfirmacionPedidoPage() {
 
   const textoOrigen = obtenerTextoUbicacionSucursal(cotizacion?.sucursal_origen)
   const textoDestino = obtenerTextoDestino(comunaSeleccionada, regionSeleccionada)
+
+  if (!usuarioPuedeComprar) {
+    return (
+      <div className="page-container">
+        <h1 className="page-title">Confirmar Pedido</h1>
+        <div className="card">
+          <div className="alert alert-warning">{mensajeNoCompra}</div>
+          <button className="btn btn-secondary mt-1" onClick={() => navigate('/carrito')}>
+            Volver al carrito
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
       <div className="page-container">

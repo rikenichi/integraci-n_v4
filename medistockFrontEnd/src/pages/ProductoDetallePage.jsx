@@ -20,7 +20,7 @@ export default function ProductoDetallePage() {
   const [agregado, setAgregado] = useState(false)
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
-  const esB2B = usuario?.rol === 'cliente_b2b' || usuario?.rol === 'ejecutivo'
+  const esB2B = usuario?.rol === 'cliente_b2b'
 
   useEffect(() => {
     setLoading(true)
