@@ -98,9 +98,10 @@ medistockFrontEnd/
     │   └── api.js          # Axios + interceptors + endpoints + normalizadores
     │
     ├── utils/              # Helpers puros
-    │   ├── permisos.js          # puedeComprar(rol), razonNoCompra(rol)
-    │   ├── gruposCatalogo.js    # Mapeo categorías → grupos navbar (medicamentos/insumos/bienestar)
-    │   └── catalogoEnriquecido.js  # Mapeo SKU → nombre real (Paracetamol, etc.) + dosis + uso
+    │   ├── permisos.js              # puedeComprar(rol), razonNoCompra(rol)
+    │   ├── gruposCatalogo.js        # Mapeo categorías → grupos navbar (medicamentos/insumos/bienestar)
+    │   ├── catalogoEnriquecido.js   # Mapeo SKU → nombre real (Paracetamol, etc.) + dosis + uso
+    │   └── cotizacionStorage.js     # Persiste cotización Chilexpress por pedido en localStorage
     │
     └── pages/              # Vistas por ruta, cada una con su .jsx + .css
         ├── HomePage / CatalogoPage / ProductoDetallePage
@@ -206,7 +207,7 @@ const ROLES_PUEDEN_COMPRAR = new Set([
 ### Solo compradores (clientes / admin / ejecutivo)
 | Ruta | Página |
 |---|---|
-| `/carrito` | CarritoPage (selector despacho, desglose IVA, descuento B2B) |
+| `/carrito` | CarritoPage (selector despacho domicilio/retiro, desglose IVA, descuento B2B; envío se cotiza en el siguiente paso) |
 | `/confirmar-pedido` | ConfirmacionPedidoPage |
 | `/resultado-pago/:pedidoId` | ResultadoPagoPage |
 
@@ -283,7 +284,8 @@ Para evitar que un rol no autorizado dispare acciones reservadas:
 ### Formato chileno
 - Precios: `Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' })`
 - Fechas: `toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })`
-- IVA: 19% incluido en precio. Costo despacho domicilio: $3.000 (constantes en `CarritoContext.jsx`)
+- IVA: 19% incluido en precio del producto (constante `IVA` en `CarritoContext.jsx`)
+- Costo de despacho: **no hardcoded**. Se cotiza con Chilexpress en `ConfirmacionPedidoPage` según comuna + peso real del pedido
 
 ---
 
@@ -313,6 +315,49 @@ Ejemplo:
 ```
 
 Si el backend en el futuro devuelve los nombres reales, basta con borrar la entrada del mapeo correspondiente y el normalizador usará lo que venga del backend.
+
+---
+
+## Flujo del costo de despacho (cotización Chilexpress)
+
+El costo de envío **no está hardcoded** en el frontend. El flujo real es:
+
+1. **`CarritoPage`** muestra al cliente la opción "A domicilio" o "Retiro en sucursal".
+   - Si elige domicilio, no se muestra monto: dice *"Cotización Chilexpress al confirmar"*.
+   - El total visible en el carrito es `subtotal − descuento` (sin envío).
+
+2. **`ConfirmacionPedidoPage`** (checkout) hace la cotización real:
+   - Toma la dirección registrada del usuario (comuna + región).
+   - Itera por las sucursales con stock suficiente para el pedido completo.
+   - Por cada sucursal candidata, llama a `cotizarDespacho()` → `POST /logistics/cotizar/` con:
+     ```js
+     { sucursal_id, county_code_destino, productos: [{ peso_mg, largo_mm, ancho_mm, alto_mm, cantidad, valor_unitario }] }
+     ```
+   - El backend usa `py3dbp` para embalar el pedido en cajas y consulta el API real de Chilexpress.
+   - La respuesta trae `servicios_disponibles` (EXPRESS, PRIORITARIO, etc.) con precio real por cada uno.
+   - El frontend muestra el desplegable de servicios y auto-selecciona el más barato.
+
+3. **Al confirmar el pedido**, el frontend llama `crearPedido()` y, **apenas el backend responde con `pedido.id`**, guarda en `localStorage` (vía `utils/cotizacionStorage.js`):
+   ```js
+   {
+     costo: 5661,
+     servicio: 'EXPRESS',
+     codigo: 3,
+     peso_kg: '0.53',
+     destino: 'Providencia, Region Metropolitana',
+     total_con_envio: 7141
+   }
+   ```
+   El backend **no** tiene un campo `costo_envio` en el modelo Pedido, por eso la persistencia frontend es necesaria.
+
+4. **`ResultadoPagoPage` y `PedidoDetallePage`** leen `obtenerCotizacionPedido(pedidoId)` y muestran:
+   - Línea "Envío (Chilexpress EXPRESS) — $5.661"
+   - Total a pagar real: `pedido.total + costo_envio`
+   - Detalle peso final, código servicio y destino
+
+5. El **monto que se envía al pasarela de pago** (Webpay/simulado) es `totalConEnvio` — el cliente paga el monto correcto.
+
+**Limitación conocida**: cuando el backend agregue un campo `costo_envio` al modelo Pedido, este storage local puede eliminarse. La lógica de lectura ya hace fallback: si `pedido.costo_envio` viene del backend, se usa ese; si no, se usa el guardado en localStorage.
 
 ---
 
