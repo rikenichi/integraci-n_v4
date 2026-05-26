@@ -11,6 +11,8 @@ import {
   obtenerDocumentosTributarios,
   obtenerResumenInventario,
 } from '../services/api'
+import { Button, Spinner } from '../components/ui'
+import { extraerLista, formatEstado, formatFecha, formatPrecio } from '../utils/format'
 import './PanelPage.css'
 
 function safeLower(value) {
@@ -25,39 +27,6 @@ function safeUpper(value, fallback = 'N/A') {
 function formatTexto(value, fallback = '-') {
   const text = String(value || '').trim()
   return text || fallback
-}
-
-function formatEstado(value) {
-  return String(value || '')
-      .trim()
-      .toLowerCase()
-      .replaceAll('_', ' ')
-      .replace(/\b\w/g, letra => letra.toUpperCase())
-}
-
-function extraerLista(data) {
-  return data?.results || data || []
-}
-
-function formatPrecio(n) {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-  }).format(Number(n || 0))
-}
-
-function formatFecha(s) {
-  if (!s) return '-'
-
-  const fecha = new Date(s)
-
-  if (Number.isNaN(fecha.getTime())) return '-'
-
-  return fecha.toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
 function normalizarPedido(p) {
@@ -518,7 +487,7 @@ export default function PanelPage() {
         </div>
 
         {loading ? (
-            <div className="spinner" />
+            <Spinner />
         ) : (
             <>
               {tab === 'pedidos' && (

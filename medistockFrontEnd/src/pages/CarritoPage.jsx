@@ -1,11 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
+import { Button, EmptyState } from '../components/ui'
+import { formatPrecio } from '../utils/format'
 import './CarritoPage.css'
-
-function formatPrecio(n) {
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
-}
 
 export default function CarritoPage() {
   const {
@@ -25,15 +23,17 @@ export default function CarritoPage() {
 
   if (items.length === 0) {
     return (
-      <div className="page-container text-center">
-        <div style={{ padding: '60px 0' }}>
-          <div style={{ fontSize: '4rem' }}>🛒</div>
-          <h2 style={{ marginTop: 16, marginBottom: 8 }}>Tu carrito está vacío</h2>
-          <p className="text-muted">Agrega productos desde el catálogo.</p>
-          <button className="btn btn-primary mt-2" onClick={() => navigate('/catalogo')}>
-            Ir al catálogo
-          </button>
-        </div>
+      <div className="page-container">
+        <EmptyState
+          icon="🛒"
+          titulo="Tu carrito está vacío"
+          descripcion="Agrega productos desde el catálogo."
+          accion={
+            <Button variant="primary" onClick={() => navigate('/catalogo')}>
+              Ir al catálogo
+            </Button>
+          }
+        />
       </div>
     )
   }
@@ -42,7 +42,9 @@ export default function CarritoPage() {
     <div className="page-container">
       <div className="flex-between">
         <h1 className="page-title">Carrito de Compras</h1>
-        <button className="btn btn-secondary btn-sm" onClick={vaciarCarrito}>Vaciar carrito</button>
+        <Button variant="secondary" size="sm" onClick={vaciarCarrito}>
+          Vaciar carrito
+        </Button>
       </div>
 
       <div className="carrito-layout">
@@ -58,23 +60,16 @@ export default function CarritoPage() {
                   <p className="item-precio">{formatPrecio(precio)} / {producto.unidad_medida}</p>
                 </div>
                 <div className="item-cantidad">
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => actualizarCantidad(producto.id, cantidad - 1)}
-                  >−</button>
+                  <Button variant="secondary" size="sm" onClick={() => actualizarCantidad(producto.id, cantidad - 1)}>−</Button>
                   <span>{cantidad}</span>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => actualizarCantidad(producto.id, cantidad + 1)}
-                  >+</button>
+                  <Button variant="secondary" size="sm" onClick={() => actualizarCantidad(producto.id, cantidad + 1)}>+</Button>
                 </div>
                 <div className="item-subtotal">
                   {formatPrecio(parseFloat(precio) * cantidad)}
                 </div>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => quitarItem(producto.id)}
-                >✕</button>
+                <Button variant="danger" size="sm" onClick={() => quitarItem(producto.id)} aria-label="Quitar producto">
+                  ✕
+                </Button>
               </div>
             )
           })}
@@ -171,12 +166,9 @@ export default function CarritoPage() {
             </p>
           )}
 
-          <button
-            className="btn btn-primary btn-block btn-lg mt-2"
-            onClick={() => navigate('/confirmar-pedido')}
-          >
+          <Button variant="primary" size="lg" block onClick={() => navigate('/confirmar-pedido')} className="mt-2">
             Confirmar pedido →
-          </button>
+          </Button>
         </div>
       </div>
     </div>
