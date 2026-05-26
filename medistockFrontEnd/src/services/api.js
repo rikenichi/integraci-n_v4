@@ -330,7 +330,7 @@ export const getStockProducto = () =>
 
 function normalizarProducto(item) {
   const stockPorSucursal = item.stock_por_sucursal || []
-  const precio = item.valor_unitario ?? item.precio_b2c ?? item.precio_b2b ?? item.precio ?? 0
+  const precio = item.precio_con_iva ?? item.precio_b2c ?? item.precio_b2b ?? item.valor_unitario ?? item.precio ?? 0
 
   const base = {
     ...item,
@@ -339,8 +339,9 @@ function normalizarProducto(item) {
     sku: item.sku || item.codigo || null,
     nombre: item.nombre || '',
     descripcion: item.descripcion || '',
-    precio_b2c: item.precio_b2c ?? item.valor_unitario ?? item.precio ?? 0,
-    precio_b2b: item.precio_b2b ?? item.valor_unitario ?? item.precio ?? 0,
+    precio_con_iva: item.precio_con_iva ?? null,
+    precio_b2c: item.precio_con_iva ?? item.precio_b2c ?? item.valor_unitario ?? item.precio ?? 0,
+    precio_b2b: item.precio_con_iva ?? item.precio_b2b ?? item.precio_b2c ?? item.valor_unitario ?? item.precio ?? 0,
     precio,
     unidad_medida: item.unidad_medida || 'unidad',
     categoria_nombre: item.categoria_nombre || item.categorias?.[0] || '',

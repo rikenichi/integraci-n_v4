@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import { useToast } from './ToastContext'
+import { obtenerPrecioProducto } from '../utils/format'
 
 const CarritoContext = createContext(null)
 
@@ -97,7 +98,7 @@ export function CarritoProvider({ children }) {
   // Subtotal con IVA incluido (el precio del backend ya viene con IVA)
   const calcularTotal = (esB2B = false) =>
     items.reduce((acc, i) => {
-      const precio = esB2B ? i.producto.precio_b2b : i.producto.precio_b2c
+      const precio = obtenerPrecioProducto(i.producto, esB2B)
       return acc + parseFloat(precio || 0) * i.cantidad
     }, 0)
 

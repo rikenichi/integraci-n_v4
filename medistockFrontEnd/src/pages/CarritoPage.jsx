@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { Button, EmptyState } from '../components/ui'
-import { formatPrecio } from '../utils/format'
+import { formatPrecio, obtenerPrecioProducto } from '../utils/format'
 import './CarritoPage.css'
 
 export default function CarritoPage() {
@@ -50,7 +50,7 @@ export default function CarritoPage() {
       <div className="carrito-layout">
         <div className="carrito-items">
           {items.map(({ producto, cantidad }) => {
-            const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
+            const precio = obtenerPrecioProducto(producto, esB2B)
             return (
               <div key={producto.id} className="item-row card">
                 <div className="item-icon">🏥</div>

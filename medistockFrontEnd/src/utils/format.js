@@ -16,6 +16,28 @@ export function formatPrecio(valor) {
   return formateadorCLP.format(Number(valor || 0))
 }
 
+export function obtenerPrecioProducto(producto, esB2B = false) {
+  const candidatos = esB2B
+    ? [
+        producto?.precio_con_iva,
+        producto?.precio_b2b,
+        producto?.precio_b2c,
+        producto?.valor_unitario,
+        producto?.precio,
+      ]
+    : [
+        producto?.precio_con_iva,
+        producto?.precio_b2c,
+        producto?.precio_b2b,
+        producto?.valor_unitario,
+        producto?.precio,
+      ]
+
+  const valor = candidatos.find((item) => item !== undefined && item !== null && item !== '')
+  const numero = Number(valor)
+  return Number.isFinite(numero) ? numero : 0
+}
+
 /** Versión compacta: 1234567 → "$1.2M", 4500 → "$5K". */
 export function formatPrecioCorto(valor) {
   const n = Number(valor || 0)

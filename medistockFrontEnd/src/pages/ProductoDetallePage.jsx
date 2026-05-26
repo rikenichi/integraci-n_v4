@@ -5,7 +5,7 @@ import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { puedeComprar, razonNoCompra } from '../utils/permisos'
 import { Badge, Button, Spinner } from '../components/ui'
-import { formatPrecio } from '../utils/format'
+import { formatPrecio, obtenerPrecioProducto } from '../utils/format'
 import './ProductoDetallePage.css'
 
 export default function ProductoDetallePage() {
@@ -45,7 +45,7 @@ export default function ProductoDetallePage() {
   if (error) return <div className="page-container"><div className="alert alert-error">{error}</div></div>
   if (!producto) return null
 
-  const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
+  const precio = obtenerPrecioProducto(producto, esB2B)
   const stockDisponible = Number(producto.stock_disponible ?? producto.stock ?? 0)
   const sinStock = stockDisponible <= 0
   const usuarioPuedeComprar = puedeComprar(usuario?.rol)

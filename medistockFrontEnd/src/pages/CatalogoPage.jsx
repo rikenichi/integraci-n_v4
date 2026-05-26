@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 import { filtrarPorGrupo, obtenerGrupo } from '../utils/gruposCatalogo'
 import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { obtenerPrecioProducto } from '../utils/format'
 import './CatalogoPage.css'
 
 function formatPrecio(n) {
@@ -210,7 +211,7 @@ export default function CatalogoPage() {
                   </p>
                 )}
                 <div className="producto-precio">
-                  {formatPrecio(esB2B ? p.precio_b2b : p.precio_b2c)}
+                  {formatPrecio(obtenerPrecioProducto(p, esB2B))}
                   {esB2B && (
                     <span className="text-muted" style={{fontSize:'0.75rem', display:'block'}}>
                       + 10% descuento institucional

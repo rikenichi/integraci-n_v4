@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCarrito } from '../context/CarritoContext'
 import { useAuth } from '../context/AuthContext'
 import { guardarCotizacionPedido } from '../utils/cotizacionStorage'
+import { obtenerPrecioProducto } from '../utils/format'
 import {
   crearDireccionEntrega,
   crearPedido,
@@ -175,7 +176,7 @@ function construirProductosCotizacion(items) {
     ancho_mm: numeroSeguro(producto?.ancho_mm, 100),
     alto_mm: numeroSeguro(producto?.alto_mm, 100),
     cantidad: numeroSeguro(cantidad, 1),
-    valor_unitario: Number(producto?.valor_unitario ?? producto?.precio ?? producto?.precio_b2c ?? 0),
+    valor_unitario: obtenerPrecioProducto(producto),
   }))
 }
 
@@ -1291,7 +1292,7 @@ export default function ConfirmacionPedidoPage() {
               <h3 className="section-title">Productos ({items.length})</h3>
 
               {items.map(({ producto, cantidad }) => {
-                const precio = esB2B ? producto.precio_b2b : producto.precio_b2c
+                const precio = obtenerPrecioProducto(producto, esB2B)
 
                 return (
                     <div key={producto.id} className="confirmar-item">
