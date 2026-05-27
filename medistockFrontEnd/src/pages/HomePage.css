@@ -358,6 +358,7 @@
 }
 
 .home-products-grid {
+  align-items: stretch;
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -372,6 +373,13 @@
   box-shadow: 0 10px 24px rgba(26, 72, 97, 0.08);
   overflow: hidden;
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.home-product-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 430px;
 }
 
 .home-product-card:hover,
@@ -392,6 +400,8 @@
 }
 
 .product-image-placeholder {
+  flex: 0 0 150px;
+  height: 150px;
   min-height: 150px;
 }
 
@@ -411,6 +421,9 @@
 }
 
 .product-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 1rem 1rem 0.7rem;
 }
 
@@ -461,15 +474,31 @@
   margin: 0 0 0.55rem;
 }
 
-.home-product-card p {
+.home-product-card h3 {
+  display: -webkit-box;
+  min-height: 2.75rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.home-product-card .product-card-description {
   color: #657b8a;
   display: -webkit-box;
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0 0 0.8rem;
+  min-height: 2.7rem;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+}
+
+.product-card-price {
+  align-items: flex-end;
+  display: flex;
+  margin-top: auto;
+  min-height: 2.2rem;
 }
 
 .home-product-card strong,
@@ -481,6 +510,7 @@
 .product-card-actions {
   border-top: 1px solid #edf3f6;
   display: grid;
+  flex-shrink: 0;
   gap: 0.6rem;
   grid-template-columns: 1fr 1fr;
   padding: 0.85rem 1rem 1rem;
@@ -566,6 +596,7 @@
 }
 
 .home-offers-track {
+  align-items: stretch;
   display: grid;
   gap: 1rem;
   grid-auto-columns: calc((100% - 3rem) / 4);
@@ -577,6 +608,10 @@
 }
 
 .home-offer-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 350px;
   min-width: 0;
   padding: 1rem;
   position: relative;
@@ -598,18 +633,33 @@
 
 .offer-image {
   border-radius: 8px;
+  flex: 0 0 125px;
+  height: 125px;
   min-height: 125px;
 }
 
 .offer-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 0.9rem 0 1rem;
 }
 
+.home-offer-card h3 {
+  display: -webkit-box;
+  min-height: 2.75rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
 .offer-prices {
-  align-items: baseline;
+  align-items: flex-end;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.55rem;
-  margin-top: 0.75rem;
+  margin-top: auto;
+  min-height: 2.1rem;
 }
 
 .offer-prices span {
@@ -619,6 +669,8 @@
 }
 
 .home-offer-card button {
+  flex-shrink: 0;
+  margin-top: auto;
   width: 100%;
 }
 

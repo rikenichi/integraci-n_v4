@@ -205,35 +205,37 @@ export default function CatalogoPage() {
                 <p className="producto-categoria text-muted">
                   {p.tipo_producto || p.categoria_nombre}
                 </p>
-                {p.detalle_uso && (
-                  <p className="producto-descripcion text-muted" style={{fontSize:'0.78rem', marginTop:4, lineHeight:1.35}}>
-                    {p.detalle_uso}
-                  </p>
-                )}
-                <div className="producto-precio">
-                  {formatPrecio(obtenerPrecioProducto(p, esB2B))}
-                  {esB2B && (
-                    <span className="text-muted" style={{fontSize:'0.75rem', display:'block'}}>
-                      + 10% descuento institucional
-                    </span>
-                  )}
+                <p className="producto-descripcion text-muted">
+                  {p.detalle_uso || p.descripcion || 'Producto disponible para compra en Medistock.'}
+                </p>
+                <div className="producto-footer">
+                  <div className="producto-precio">
+                    {formatPrecio(obtenerPrecioProducto(p, esB2B))}
+                    {esB2B && (
+                      <span className="text-muted" style={{fontSize:'0.75rem', display:'block'}}>
+                        + 10% descuento institucional
+                      </span>
+                    )}
+                  </div>
+                  <div className="producto-badges">
+                    {p.requiere_receta && (
+                      <span className="badge badge-warning">Requiere receta</span>
+                    )}
+                  </div>
                 </div>
-                {p.requiere_receta && (
-                  <span className="badge badge-warning">Requiere receta</span>
-                )}
               </div>
               <div className="producto-acciones">
-                <Link to={`/producto/${p.id}`} className="btn btn-secondary btn-sm">
-                  Ver detalle
-                </Link>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => agregarItem(p)}
-                  disabled={Number(p.stock_disponible || 0) <= 0 || !usuarioPuedeComprar}
-                  title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
-                >
-                  Agregar
-                </button>
+                  <Link to={`/producto/${p.id}`} className="btn btn-secondary btn-sm">
+                    Ver detalle
+                  </Link>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => agregarItem(p)}
+                    disabled={Number(p.stock_disponible || 0) <= 0 || !usuarioPuedeComprar}
+                    title={!usuarioPuedeComprar ? mensajeNoCompra : ''}
+                  >
+                    Agregar
+                  </button>
               </div>
             </div>
           ))}

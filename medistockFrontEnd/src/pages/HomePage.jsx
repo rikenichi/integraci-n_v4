@@ -238,8 +238,12 @@ export default function HomePage() {
                       <span className={`stock-badge ${stockBadge.className}`}>{stockBadge.label}</span>
                     </div>
                     <h3>{producto.nombre}</h3>
-                    <p>{producto.descripcion || 'Producto medico disponible en catalogo Medistock.'}</p>
-                    <strong>{formatearPrecio(precio)}</strong>
+                    <p className="product-card-description">
+                      {producto.descripcion || 'Producto medico disponible en catalogo Medistock.'}
+                    </p>
+                    <div className="product-card-price">
+                      <strong>{formatearPrecio(precio)}</strong>
+                    </div>
                   </div>
                   <div className="product-card-actions">
                     <Link className="btn-outline" to={`/producto/${producto.id}`}>
