@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { obtenerTrasladosInventario } from '../services/api'
+import { useAuth } from '../../context/AuthContext'
+import { obtenerTrasladosInventario } from '../../services/api'
 import './TrasladosInventarioPage.css'
 
 const ROLES_INTERNOS = ['admin', 'operador', 'analista']

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { obtenerPedidoDetalle } from '../services/api'
-import { obtenerCotizacionPedido } from '../utils/cotizacionStorage'
+import { useAuth } from '../../context/AuthContext'
+import { obtenerPedidoDetalle } from '../../services/api'
+import { obtenerCotizacionPedido } from '../../utils/cotizacionStorage'
 import './PedidoDetallePage.css'
 
 const ESTADOS_PAGABLES = ['pendiente', 'aprobado']

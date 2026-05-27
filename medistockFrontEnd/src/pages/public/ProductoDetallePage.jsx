@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { obtenerProductoCompatible, obtenerStockProductoCompatible } from '../services/api'
-import { useCarrito } from '../context/CarritoContext'
-import { useAuth } from '../context/AuthContext'
-import { puedeComprar, razonNoCompra } from '../utils/permisos'
-import { Badge, Button, Spinner } from '../components/ui'
-import { formatPrecio, obtenerPrecioProducto } from '../utils/format'
+import { obtenerProductoCompatible, obtenerStockProductoCompatible } from '../../services/api'
+import { useCarrito } from '../../context/CarritoContext'
+import { useAuth } from '../../context/AuthContext'
+import { puedeComprar, razonNoCompra } from '../../utils/permisos'
+import { Badge, Button, Spinner } from '../../components/ui'
+import { formatPrecio, obtenerPrecioProducto } from '../../utils/format'
 import './ProductoDetallePage.css'
 
 export default function ProductoDetallePage() {

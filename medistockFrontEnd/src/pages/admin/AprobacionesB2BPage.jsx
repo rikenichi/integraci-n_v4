@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   aprobarRevisionB2B,
   observarRevisionB2B,
   obtenerAprobacionesB2B,
   rechazarRevisionB2B,
-} from '../services/api'
+} from '../../services/api'
 import './AprobacionesB2BPage.css'
 
 const ROLES_PERMITIDOS = ['admin', 'ejecutivo', 'analista']

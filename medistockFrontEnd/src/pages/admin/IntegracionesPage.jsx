@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   obtenerAuditoriaEventos,
   obtenerIntegracionesExternas,
   obtenerRegistrosIntegracion,
-} from '../services/api'
+} from '../../services/api'
 import './IntegracionesPage.css'
 
 const ROLES_INTERNOS = ['admin', 'operador', 'analista']

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPedido, simularPago, iniciarWebpay } from '../services/api'
-import { obtenerCotizacionPedido } from '../utils/cotizacionStorage'
+import { getPedido, simularPago, iniciarWebpay } from '../../services/api'
+import { obtenerCotizacionPedido } from '../../utils/cotizacionStorage'
 import './ResultadoPagoPage.css'
 
 function formatPrecio(n) {

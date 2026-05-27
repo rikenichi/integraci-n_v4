@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { obtenerProductosCompatibles } from '../services/api'
-import { useAuth } from '../context/AuthContext'
-import { useCarrito } from '../context/CarritoContext'
-import { puedeComprar, razonNoCompra } from '../utils/permisos'
-import Footer from '../components/Footer'
+import { obtenerProductosCompatibles } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
+import { useCarrito } from '../../context/CarritoContext'
+import { puedeComprar, razonNoCompra } from '../../utils/permisos'
+import Footer from '../../components/Footer'
 import './HomePage.css'
 
 const heroSlides = [

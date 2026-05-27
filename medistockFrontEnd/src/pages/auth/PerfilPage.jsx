@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCombobox } from 'downshift'
-import { useAuth } from '../context/AuthContext'
-import { getPerfil, obtenerComunasDespacho, obtenerRegionesDespacho } from '../services/api'
+import { useAuth } from '../../context/AuthContext'
+import { getPerfil, obtenerComunasDespacho, obtenerRegionesDespacho } from '../../services/api'
 import './PerfilPage.css'
 
 const ROLES_CLIENTE = ['cliente_b2c', 'cliente_b2b']

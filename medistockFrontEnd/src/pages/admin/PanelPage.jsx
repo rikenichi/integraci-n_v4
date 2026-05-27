@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   aprobarPedido,
   getDespachos,
@@ -10,9 +10,9 @@ import {
   generarDteDesdePedido,
   obtenerDocumentosTributarios,
   obtenerResumenInventario,
-} from '../services/api'
-import { Button, Spinner } from '../components/ui'
-import { extraerLista, formatEstado, formatFecha, formatPrecio } from '../utils/format'
+} from '../../services/api'
+import { Button, Spinner } from '../../components/ui'
+import { extraerLista, formatEstado, formatFecha, formatPrecio } from '../../utils/format'
 import './PanelPage.css'
 
 function safeLower(value) {

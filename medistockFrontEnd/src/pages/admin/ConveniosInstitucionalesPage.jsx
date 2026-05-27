@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { obtenerConveniosInstitucionales } from '../services/api'
+import { useAuth } from '../../context/AuthContext'
+import { obtenerConveniosInstitucionales } from '../../services/api'
 import './ConveniosInstitucionalesPage.css'
 
 const ROLES_PERMITIDOS = ['admin', 'ejecutivo', 'analista']

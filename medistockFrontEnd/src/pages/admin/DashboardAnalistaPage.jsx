@@ -9,8 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useAuth } from '../context/AuthContext'
-import api from '../services/api'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../services/api'
 import './DashboardAnalistaPage.css'
 
 const ROLES_PERMITIDOS = ['admin', 'analista']

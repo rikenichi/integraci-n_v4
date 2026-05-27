@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useCombobox } from 'downshift'
 import { Link } from 'react-router-dom'
-import { registrarUsuario, obtenerComunasDespacho, obtenerRegionesDespacho } from '../services/api'
+import { registrarUsuario, obtenerComunasDespacho, obtenerRegionesDespacho } from '../../services/api'
 import './RegistroPage.css'
 
 const TIPOS_CLIENTE = {

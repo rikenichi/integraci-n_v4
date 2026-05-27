@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   actualizarConciliacionPago,
   obtenerConciliacionesPago,
-} from '../services/api'
+} from '../../services/api'
 import './ConciliacionPagosPage.css'
 
 const ROLES_PERMITIDOS = ['admin', 'analista']

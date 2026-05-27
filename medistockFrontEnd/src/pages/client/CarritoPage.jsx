@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { useCarrito } from '../context/CarritoContext'
-import { useAuth } from '../context/AuthContext'
-import { Button, EmptyState } from '../components/ui'
-import { formatPrecio, obtenerPrecioProducto } from '../utils/format'
-import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { useCarrito } from '../../context/CarritoContext'
+import { useAuth } from '../../context/AuthContext'
+import { Button, EmptyState } from '../../components/ui'
+import { formatPrecio, obtenerPrecioProducto } from '../../utils/format'
+import { puedeComprar, razonNoCompra } from '../../utils/permisos'
 import './CarritoPage.css'
 
 export default function CarritoPage() {

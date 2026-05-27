@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { obtenerDocumentoTributarioDetalle } from '../services/api'
+import { obtenerDocumentoTributarioDetalle } from '../../services/api'
 import './ComprobanteDtePage.css'
 
 function formatPrecio(valor) {

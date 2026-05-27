@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCarrito } from '../context/CarritoContext'
-import { useAuth } from '../context/AuthContext'
-import { guardarCotizacionPedido } from '../utils/cotizacionStorage'
-import { obtenerPrecioProducto } from '../utils/format'
-import { puedeComprar, razonNoCompra } from '../utils/permisos'
+import { useCarrito } from '../../context/CarritoContext'
+import { useAuth } from '../../context/AuthContext'
+import { guardarCotizacionPedido } from '../../utils/cotizacionStorage'
+import { obtenerPrecioProducto } from '../../utils/format'
+import { puedeComprar, razonNoCompra } from '../../utils/permisos'
 import {
   crearDireccionEntrega,
   crearPedido,
@@ -13,7 +13,7 @@ import {
   obtenerMisDirecciones,
   obtenerRegionesDespacho,
   obtenerSucursalDespacho,
-} from '../services/api'
+} from '../../services/api'
 import './ConfirmacionPedidoPage.css'
 
 function formatPrecio(n) {
