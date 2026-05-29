@@ -51,8 +51,8 @@ export default function CatalogoPage() {
   const { agregarItem } = useCarrito()
   const { usuario } = useAuth()
   const esB2B = usuario?.rol === 'cliente_b2b'
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
-  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
+  const mensajeNoCompra = razonNoCompra(usuario)
 
   useEffect(() => {
     const timer = window.setInterval(() => {

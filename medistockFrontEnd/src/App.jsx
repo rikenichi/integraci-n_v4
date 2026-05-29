@@ -47,7 +47,7 @@ function RutaSoloCompradores({ children }) {
   const { usuario, cargando } = useAuth()
   if (cargando) return <div className="spinner" />
   if (!usuario) return <Navigate to="/login" replace />
-  if (!puedeComprar(usuario.rol)) return <Navigate to="/panel" replace />
+  if (!puedeComprar(usuario)) return <Navigate to="/panel" replace />
   return children
 }
 

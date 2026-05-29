@@ -19,8 +19,8 @@ export default function CarritoPage() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const esB2B = usuario?.rol === 'cliente_b2b'
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
-  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
+  const mensajeNoCompra = razonNoCompra(usuario)
 
   const { subtotal, descuento, neto, iva, total } = calcularResumen({ esB2B })
 

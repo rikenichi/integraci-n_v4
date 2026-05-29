@@ -99,8 +99,8 @@ function crearOfertaVisual(producto, index, esB2B) {
 export default function HomePage() {
   const { usuario } = useAuth()
   const { agregarItem } = useCarrito()
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
-  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
+  const mensajeNoCompra = razonNoCompra(usuario)
   const [productos, setProductos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

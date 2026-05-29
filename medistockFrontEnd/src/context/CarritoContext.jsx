@@ -5,18 +5,18 @@ import { obtenerPrecioProducto } from '../utils/format'
 
 const CarritoContext = createContext(null)
 
-function rolUsuarioActual() {
+function usuarioActualGuardado() {
   try {
     const usuarioRaw = localStorage.getItem('usuario')
     if (!usuarioRaw) return null
-    return JSON.parse(usuarioRaw)?.rol || null
+    return JSON.parse(usuarioRaw)
   } catch {
     return null
   }
 }
 
 // IVA Chile 19%, ya incluido en el precio del producto.
-// El costo de despacho se cotiza dinámicamente con Chilexpress en el checkout
+// El costo de despacho se cotiza dinamicamente con Chilexpress en el checkout
 // (ConfirmacionPedidoPage), ya que depende de la comuna y el peso del pedido.
 // El carrito muestra "se calcula al confirmar" en vez de un monto fijo.
 export const IVA = 0.19
@@ -46,24 +46,23 @@ export function CarritoProvider({ children }) {
 
   const agregarItem = (producto, cantidad = 1) => {
     // Defensa central #1: solo roles autorizados pueden comprar.
-    const rol = rolUsuarioActual()
-    if (rol && !puedeComprar(rol)) {
-      console.warn(`No se agregó al carrito — el rol "${rol}" no tiene permitido comprar.`)
-      mostrarToast(razonNoCompra(rol), 'error')
+    const usuario = usuarioActualGuardado()
+    if (usuario && !puedeComprar(usuario)) {
+      console.warn(`No se agrego al carrito: el rol "${usuario.rol || usuario.rol_backend || 'desconocido'}" no tiene permitido comprar.`)
+      mostrarToast(razonNoCompra(usuario), 'error')
       return false
     }
 
     // Defensa central #2: nunca permitir productos sin stock en el carrito.
     const stockDisponible = Number(producto?.stock_disponible ?? producto?.stock ?? 0)
     if (stockDisponible <= 0) {
-      console.warn(`No se agregó al carrito "${producto?.nombre}" — stock agotado.`)
-      mostrarToast(`"${producto?.nombre || 'Producto'}" está agotado`, 'error')
+      console.warn(`No se agrego al carrito "${producto?.nombre}": stock agotado.`)
+      mostrarToast(`"${producto?.nombre || 'Producto'}" esta agotado`, 'error')
       return false
     }
 
     setItems(prev => {
       const existe = prev.find(i => i.producto.id === producto.id)
-      // No exceder el stock disponible al sumar
       const cantidadActual = existe ? existe.cantidad : 0
       const cantidadFinal = Math.min(cantidadActual + cantidad, stockDisponible)
       if (existe) {
@@ -95,7 +94,7 @@ export function CarritoProvider({ children }) {
 
   const totalItems = items.reduce((acc, i) => acc + i.cantidad, 0)
 
-  // Subtotal con IVA incluido (el precio del backend ya viene con IVA)
+  // Subtotal con IVA incluido (el precio del backend ya viene con IVA).
   const calcularTotal = (esB2B = false) =>
     items.reduce((acc, i) => {
       const precio = obtenerPrecioProducto(i.producto, esB2B)
@@ -105,15 +104,12 @@ export function CarritoProvider({ children }) {
   /**
    * Desglose tributario a partir del subtotal con IVA.
    *
-   * - subtotal:           suma de precios (con IVA incluido)
-   * - descuento:          10% institucional, opcional
-   * - baseAfectaIva:      subtotal − descuento (el envío no agrega IVA en este modelo)
-   * - neto:               baseAfectaIva / 1.19
-   * - iva:                baseAfectaIva − neto
-   * - total:              baseAfectaIva (sin incluir despacho; este se cotiza en el checkout)
-   *
-   * IMPORTANTE: el costo de despacho NO se calcula acá. Depende de comuna y
-   * peso, y se cotiza con Chilexpress en ConfirmacionPedidoPage.
+   * - subtotal:      suma de precios con IVA incluido.
+   * - descuento:     10% institucional, opcional.
+   * - baseAfectaIva: subtotal menos descuento.
+   * - neto:          baseAfectaIva / 1.19.
+   * - iva:           baseAfectaIva menos neto.
+   * - total:         baseAfectaIva sin incluir despacho.
    */
   const calcularResumen = ({ esB2B = false } = {}) => {
     const subtotal = calcularTotal(esB2B)

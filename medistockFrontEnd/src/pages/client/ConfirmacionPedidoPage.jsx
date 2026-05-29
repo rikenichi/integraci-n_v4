@@ -412,8 +412,8 @@ export default function ConfirmacionPedidoPage() {
   const navigate = useNavigate()
 
   const esB2B = usuario?.rol === 'cliente_b2b'
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
-  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
+  const mensajeNoCompra = razonNoCompra(usuario)
 
   const [direcciones, setDirecciones] = useState([])
   const [direccionRegistrada, setDireccionRegistrada] = useState(null)
@@ -513,6 +513,17 @@ export default function ConfirmacionPedidoPage() {
       && comunaCodigo
       && cotizacionValida
   )
+
+  const obtenerMotivoBloqueoPedido = () => {
+    if (!usuarioPuedeComprar) return mensajeNoCompra
+    if (!items.length) return 'El carrito esta vacio.'
+    if (!direccion.trim()) return 'La direccion de entrega es obligatoria.'
+    if (!regionCodigo || !comunaCodigo) return 'Debes seleccionar region y comuna para continuar.'
+    if (!cotizacion) return 'Debes cotizar el despacho antes de crear el pedido.'
+    if (!cotizacion?.sucursal_origen?.id) return 'Debes tener una sucursal de origen seleccionada desde la cotizacion.'
+    if (!servicioSeleccionado) return 'Debes seleccionar un servicio de despacho.'
+    return ''
+  }
 
   const invalidarCotizacion = useCallback(() => {
     setCotizacion(null)
@@ -914,7 +925,7 @@ export default function ConfirmacionPedidoPage() {
     }
 
     if (!puedeCrearPedido) {
-      setError('Debes seleccionar region, comuna y cotizar el despacho antes de crear el pedido.')
+      setError(obtenerMotivoBloqueoPedido() || 'Debes completar los datos de entrega y cotizar el despacho antes de crear el pedido.')
       return
     }
 
@@ -1409,7 +1420,7 @@ export default function ConfirmacionPedidoPage() {
             <button
                 className="btn btn-primary btn-block btn-lg mt-2"
                 onClick={handleConfirmar}
-                disabled={loading || items.length === 0 || !puedeCrearPedido}
+                disabled={loading || items.length === 0}
             >
               {loading ? 'Creando pedido...' : 'Crear pedido y pagar ->'}
             </button>

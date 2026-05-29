@@ -53,16 +53,19 @@ function perfilDesdeToken(accessToken) {
   const [firstName = '', ...apellidos] = nombreCompleto.split(' ').filter(Boolean)
   const grupos = claims.grupos || []
 
-  let rolBackend = 'TOKEN'
+  let rolBackend = String(claims.rol || claims.role || claims.tipo_usuario || '').toUpperCase() || 'TOKEN'
+  const tipoCliente = String(claims.tipo_cliente || claims.tipoCliente || '').toUpperCase()
   if (contieneAlguno(grupos, ['administrador', 'admin'])) rolBackend = 'ADMINISTRADOR'
   else if (contieneAlguno(grupos, ['ejecutivo', 'ventas'])) rolBackend = 'EJECUTIVO'
   else if (contieneAlguno(grupos, ['operador', 'logistica'])) rolBackend = 'OPERADOR'
   else if (contieneAlguno(grupos, ['analista', 'finanzas'])) rolBackend = 'ANALISTA'
+  else if (tipoCliente || rolBackend.includes('CLIENTE')) rolBackend = 'CLIENTE'
 
   return {
     rol: normalizarTexto(rolBackend),
     rol_backend: rolBackend,
     datos: {
+      tipo_cliente: tipoCliente || null,
       usuario: {
         id: claims.user_id || null,
         username: claims.username || '',
@@ -72,6 +75,42 @@ function perfilDesdeToken(accessToken) {
         grupos,
         is_staff: false,
       },
+    },
+  }
+}
+
+function perfilDesdeLoginResponse(data, accessToken) {
+  const candidatos = [
+    data?.perfil,
+    data?.profile,
+    data?.usuario,
+    data?.user,
+    data,
+  ].filter(Boolean)
+
+  const candidato = candidatos.find((item) =>
+    item?.datos
+    || item?.rol
+    || item?.Rol
+    || item?.tipo_cliente
+    || item?.tipo_usuario
+    || item?.groups
+    || item?.grupos
+  )
+
+  if (!candidato || candidato.access || candidato.refresh) {
+    return perfilDesdeToken(accessToken)
+  }
+
+  if (candidato.datos || candidato.rol || candidato.Rol) {
+    return candidato
+  }
+
+  return {
+    rol: candidato.tipo_usuario || candidato.rol || 'CLIENTE',
+    datos: {
+      tipo_cliente: candidato.tipo_cliente || null,
+      usuario: candidato,
     },
   }
 }
@@ -212,7 +251,7 @@ export function AuthProvider({ children }) {
       perfil = await getPerfil()
     } catch (error) {
       if (error.response?.status !== 404) throw error
-      perfil = perfilDesdeToken(data.access)
+      perfil = perfilDesdeLoginResponse(data, data.access)
     }
     const usuarioPerfil = normalizarPerfil(perfil)
     guardarUsuario(usuarioPerfil)

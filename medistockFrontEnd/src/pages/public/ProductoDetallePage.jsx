@@ -48,8 +48,8 @@ export default function ProductoDetallePage() {
   const precio = obtenerPrecioProducto(producto, esB2B)
   const stockDisponible = Number(producto.stock_disponible ?? producto.stock ?? 0)
   const sinStock = stockDisponible <= 0
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
-  const mensajeNoCompra = razonNoCompra(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
+  const mensajeNoCompra = razonNoCompra(usuario)
   const bloqueado = sinStock || !usuarioPuedeComprar
 
   const handleAgregar = () => {

@@ -20,7 +20,7 @@ export default function Navbar() {
   const { totalItems } = useCarrito()
   const navigate = useNavigate()
   const location = useLocation()
-  const usuarioPuedeComprar = puedeComprar(usuario?.rol)
+  const usuarioPuedeComprar = puedeComprar(usuario)
 
   // Compara ruta + query string. Se usa para que /catalogo?grupo=medicamentos
   // y /catalogo?grupo=insumos sean considerados secciones distintas.
